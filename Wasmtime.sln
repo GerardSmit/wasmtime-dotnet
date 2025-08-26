@@ -7,6 +7,10 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Wasmtime", "src\Wasmtime.cs
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Wasmtime.Tests", "tests\Wasmtime.Tests.csproj", "{8A200114-1D0B-4F90-9F82-1FFE47C207DD}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Sandbox", "Sandbox", "{F0CBCFE3-1131-4DDA-8164-567B929220B8}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Adder", "sandbox\Adder\Adder.csproj", "{C187A4A3-D287-47B1-AC8D-22CB19877D16}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -21,11 +25,18 @@ Global
 		{8A200114-1D0B-4F90-9F82-1FFE47C207DD}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{8A200114-1D0B-4F90-9F82-1FFE47C207DD}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{8A200114-1D0B-4F90-9F82-1FFE47C207DD}.Release|Any CPU.Build.0 = Release|Any CPU
+		{C187A4A3-D287-47B1-AC8D-22CB19877D16}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{C187A4A3-D287-47B1-AC8D-22CB19877D16}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{C187A4A3-D287-47B1-AC8D-22CB19877D16}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{C187A4A3-D287-47B1-AC8D-22CB19877D16}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {F5AC35E5-1373-49E6-97DC-68CB5E0369E0}
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{C187A4A3-D287-47B1-AC8D-22CB19877D16} = {F0CBCFE3-1131-4DDA-8164-567B929220B8}
 	EndGlobalSection
 EndGlobal
