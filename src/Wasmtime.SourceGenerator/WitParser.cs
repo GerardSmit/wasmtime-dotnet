@@ -21,8 +21,6 @@ public class Wit
         var file = parser.file();
         var packages = new Dictionary<WitPackageName, Dictionary<string, WitPackageVersion>>();
 
-        WitParser.PackageContext[] packageContexts;
-
         if (file.filePackage() is {} filePackage)
         {
             var result = Package(filePackage.packageName(), file.fileDefinition().SelectMany(x => x.children));

@@ -40,22 +40,13 @@ public unsafe class ComponentInstance
         var results = ComponentCallResultsInternal.ThreadInstance;
         results.Initialize(resultCount, func, store);
 
-        var stackArgs = values.Length <= 16
-            ? stackalloc wasmtime_component_val[16]
-            : new wasmtime_component_val[values.Length];
-
-        for (var i = 0; i < values.Length; i++)
-        {
-            stackArgs[i] = *values[i].Handle;
-        }
-
-        fixed (wasmtime_component_val* argsPtr = stackArgs)
+        fixed (ComponentValue* argsPtr = values)
         fixed (wasmtime_component_val* resultsPtr = results.Array)
         {
             var error = wasmtime_component_func_call(
                 &func,
                 store,
-                argsPtr,
+                (wasmtime_component_val*)argsPtr,
                 (nuint)values.Length,
                 resultsPtr,
                 (nuint)results.Length

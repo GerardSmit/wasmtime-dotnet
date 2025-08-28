@@ -1,6 +1,6 @@
 ﻿namespace TestWorld;
 
-public class TestWorldImpl
+public sealed class TestWorldImpl : ITestWorld
 {
     public static byte AddU8(byte x, byte y) => (byte)(x + y);
     public static sbyte AddS8(sbyte x, sbyte y) => (sbyte)(x + y);

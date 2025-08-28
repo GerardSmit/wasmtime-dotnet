@@ -8,22 +8,13 @@ namespace Wasmtime;
 /// </summary>
 public unsafe struct ComponentValue : IDisposable
 {
-    private wasmtime_component_val* _val;
-
-    /// <summary>
-    /// Gets or sets the internal handle to the native component value.
-    /// </summary>
-    internal wasmtime_component_val* Handle
-    {
-        get => _val;
-        set => _val = value;
-    }
+    private wasmtime_component_val _val;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="ComponentValue"/> struct with an existing native handle.
     /// </summary>
     /// <param name="val">Pointer to the native component value.</param>
-    internal ComponentValue(wasmtime_component_val* val)
+    internal ComponentValue(wasmtime_component_val val)
     {
         _val = val;
     }
@@ -34,9 +25,8 @@ public unsafe struct ComponentValue : IDisposable
     /// <param name="value">The boolean value.</param>
     public ComponentValue(bool value)
     {
-        _val = wasmtime_component_val_new();
-        _val->kind = 0;
-        _val->of.boolean = value ? (byte)1 : (byte)0;
+        _val.kind = 0;
+        _val.of.boolean = value ? (byte)1 : (byte)0;
     }
 
     /// <summary>
@@ -45,9 +35,8 @@ public unsafe struct ComponentValue : IDisposable
     /// <param name="value">The <see cref="sbyte"/> value.</param>
     public ComponentValue(sbyte value)
     {
-        _val = wasmtime_component_val_new();
-        _val->kind = 1;
-        _val->of.s8 = value;
+        _val.kind = 1;
+        _val.of.s8 = value;
     }
 
     /// <summary>
@@ -56,9 +45,8 @@ public unsafe struct ComponentValue : IDisposable
     /// <param name="value">The <see cref="byte"/> value.</param>
     public ComponentValue(byte value)
     {
-        _val = wasmtime_component_val_new();
-        _val->kind = 2;
-        _val->of.u8 = value;
+        _val.kind = 2;
+        _val.of.u8 = value;
     }
 
     /// <summary>
@@ -67,9 +55,8 @@ public unsafe struct ComponentValue : IDisposable
     /// <param name="value">The <see cref="short"/> value.</param>
     public ComponentValue(short value)
     {
-        _val = wasmtime_component_val_new();
-        _val->kind = 3;
-        _val->of.s16 = value;
+        _val.kind = 3;
+        _val.of.s16 = value;
     }
 
     /// <summary>
@@ -78,9 +65,8 @@ public unsafe struct ComponentValue : IDisposable
     /// <param name="value">The <see cref="ushort"/> value.</param>
     public ComponentValue(ushort value)
     {
-        _val = wasmtime_component_val_new();
-        _val->kind = 4;
-        _val->of.u16 = value;
+        _val.kind = 4;
+        _val.of.u16 = value;
     }
 
     /// <summary>
@@ -89,9 +75,8 @@ public unsafe struct ComponentValue : IDisposable
     /// <param name="value">The <see cref="int"/> value.</param>
     public ComponentValue(int value)
     {
-        _val = wasmtime_component_val_new();
-        _val->kind = 5;
-        _val->of.s32 = value;
+        _val.kind = 5;
+        _val.of.s32 = value;
     }
 
     /// <summary>
@@ -100,9 +85,8 @@ public unsafe struct ComponentValue : IDisposable
     /// <param name="value">The <see cref="uint"/> value.</param>
     public ComponentValue(uint value)
     {
-        _val = wasmtime_component_val_new();
-        _val->kind = 6;
-        _val->of.u32 = value;
+        _val.kind = 6;
+        _val.of.u32 = value;
     }
 
     /// <summary>
@@ -111,9 +95,8 @@ public unsafe struct ComponentValue : IDisposable
     /// <param name="value">The <see cref="long"/> value.</param>
     public ComponentValue(long value)
     {
-        _val = wasmtime_component_val_new();
-        _val->kind = 7;
-        _val->of.s64 = value;
+        _val.kind = 7;
+        _val.of.s64 = value;
     }
 
     /// <summary>
@@ -122,9 +105,8 @@ public unsafe struct ComponentValue : IDisposable
     /// <param name="value">The <see cref="ulong"/> value.</param>
     public ComponentValue(ulong value)
     {
-        _val = wasmtime_component_val_new();
-        _val->kind = 8;
-        _val->of.u64 = value;
+        _val.kind = 8;
+        _val.of.u64 = value;
     }
 
     /// <summary>
@@ -133,9 +115,8 @@ public unsafe struct ComponentValue : IDisposable
     /// <param name="value">The <see cref="float"/> value.</param>
     public ComponentValue(float value)
     {
-        _val = wasmtime_component_val_new();
-        _val->kind = 9;
-        _val->of.f32 = value;
+        _val.kind = 9;
+        _val.of.f32 = value;
     }
 
     /// <summary>
@@ -144,9 +125,8 @@ public unsafe struct ComponentValue : IDisposable
     /// <param name="value">The <see cref="double"/> value.</param>
     public ComponentValue(double value)
     {
-        _val = wasmtime_component_val_new();
-        _val->kind = 10;
-        _val->of.f64 = value;
+        _val.kind = 10;
+        _val.of.f64 = value;
     }
 
     /// <summary>
@@ -155,9 +135,8 @@ public unsafe struct ComponentValue : IDisposable
     /// <param name="value">The <see cref="char"/> value.</param>
     public ComponentValue(char value)
     {
-        _val = wasmtime_component_val_new();
-        _val->kind = 11;
-        _val->of.character = value;
+        _val.kind = 11;
+        _val.of.character = value;
     }
 
     /// <summary>
@@ -166,9 +145,8 @@ public unsafe struct ComponentValue : IDisposable
     /// <param name="value">The <see cref="string"/> value.</param>
     public ComponentValue(string value)
     {
-        _val = wasmtime_component_val_new();
-        _val->kind = 12;
-        _val->of.@string = new ByteVector(value).Handle;
+        _val.kind = 12;
+        _val.of.@string = new ByteVector(value).Handle;
     }
 
     /// <summary>
@@ -265,15 +243,12 @@ public unsafe struct ComponentValue : IDisposable
     /// <inheritdoc />
     public void Dispose()
     {
-        if (_val->kind == 12)
+        if (_val.kind == 12)
         {
-            wasm_byte_vec_delete(&_val->of.@string);
-        }
-
-        if (_val != null)
-        {
-            wasmtime_component_val_delete(_val);
-            _val = null;
+            fixed (wasm_byte_vec_t* str = &_val.of.@string)
+            {
+                wasm_byte_vec_delete(str);
+            }
         }
     }
 }
