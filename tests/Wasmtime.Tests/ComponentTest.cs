@@ -7,11 +7,83 @@ namespace Wasmtime.Tests;
 public class ComponentTest
 {
     [Fact]
+    public void SInt8()
+    {
+        using var state = new State();
+
+        Assert.Equal((sbyte)42, state.Test.AddS8(40, 2));
+    }
+
+    [Fact]
+    public void UInt8()
+    {
+        using var state = new State();
+
+        Assert.Equal((byte)42, state.Test.AddU8(40, 2));
+    }
+
+    [Fact]
+    public void SInt16()
+    {
+        using var state = new State();
+
+        Assert.Equal((short)42, state.Test.AddS16(40, 2));
+    }
+
+    [Fact]
+    public void UInt16()
+    {
+        using var state = new State();
+
+        Assert.Equal((ushort)42, state.Test.AddU16(40, 2));
+    }
+
+    [Fact]
+    public void SInt32()
+    {
+        using var state = new State();
+
+        Assert.Equal(42, state.Test.AddS32(40, 2));
+    }
+
+    [Fact]
     public void UInt32()
     {
         using var state = new State();
 
         Assert.Equal(42u, state.Test.AddU32(40, 2));
+    }
+
+    [Fact]
+    public void SInt64()
+    {
+        using var state = new State();
+
+        Assert.Equal(42L, state.Test.AddS64(40L, 2L));
+    }
+
+    [Fact]
+    public void UInt64()
+    {
+        using var state = new State();
+
+        Assert.Equal(42UL, state.Test.AddU64(40UL, 2UL));
+    }
+
+    [Fact]
+    public void Float32()
+    {
+        using var state = new State();
+
+        Assert.Equal(4.2f, state.Test.AddF32(4.0f, 0.2f), 3);
+    }
+
+    [Fact]
+    public void Float64()
+    {
+        using var state = new State();
+
+        Assert.Equal(4.2, state.Test.AddF64(4.0, 0.2), 5);
     }
 
     [Fact]
