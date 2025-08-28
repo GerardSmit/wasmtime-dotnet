@@ -1,0 +1,10 @@
+﻿package tests:test@0.1.0;
+
+world test {
+    export add-u32: func(x: u32, y: u32) -> u32;
+
+    export uppercase: func(s: string) -> string;
+
+    export set-flag: func(flag: bool);
+    export get-flag: func() -> bool;
+}

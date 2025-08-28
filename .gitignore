@@ -12,3 +12,5 @@ BenchmarkDotNet.Artifacts/
 
 .idea/
 *.DotSettings.user
+
+src/Wasmtime.SourceGenerator/gen/

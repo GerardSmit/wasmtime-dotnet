@@ -1,0 +1,33 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <OutputType>Library</OutputType>
+        <TargetFramework>net10.0</TargetFramework>
+        <AssemblyName>tests</AssemblyName>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <Nullable>enable</Nullable>
+        <RuntimeIdentifier>wasi-wasm</RuntimeIdentifier>
+        <UseAppHost>false</UseAppHost>
+        <PublishTrimmed>true</PublishTrimmed>
+
+        <InvariantGlobalization>true</InvariantGlobalization>
+        <SelfContained>true</SelfContained>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <PackageReference Update="Microsoft.DotNet.ILCompiler.LLVM" Version="10.0.0-alpha.1.25162.1" />
+        <PackageReference Include="runtime.win-x64.microsoft.dotnet.ilcompiler.llvm" Version="10.0.0-alpha.1.25162.1" />
+        <PackageReference Include="BytecodeAlliance.Componentize.DotNet.Wasm.SDK" Version="0.7.0-preview00010" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <Wit Update="component.wit" World="test" />
+    </ItemGroup>
+
+    <Target Name="CopyWasmToTestFolder" AfterTargets="Publish">
+        <Copy
+            SourceFiles="$(OutputPath)native\$(AssemblyName).wasm"
+            DestinationFiles="$(ProjectDir)..\Wasmtime.Tests\component.wasm"
+            SkipUnchangedFiles="true" />
+    </Target>
+</Project>

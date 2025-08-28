@@ -1,0 +1,30 @@
+﻿namespace Wasmtime.SourceGenerator.Models;
+
+public enum WitTypeKind
+{
+    Bool,
+    U8,
+    U16,
+    U32,
+    U64,
+    S8,
+    S16,
+    S32,
+    S64,
+    F32,
+    F64,
+    Char,
+    String,
+    List,
+    Record,
+    Variant,
+    Tuple,
+    Option,
+    Result,
+    Flags,
+    Enum,
+    Union,
+    Future,
+    Stream,
+    Func,
+}

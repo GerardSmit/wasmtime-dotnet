@@ -1,6 +1,6 @@
 $WasmtimeGeneratedSource = './src/Interop/Native.cs'
-$WasmtimeSdk = './src/obj/wasmtime-dev-x86_64-windows-c-api/include'
-$WasiPath = Join-Path (Join-Path ( [Environment]::GetFolderPath("UserProfile") ) ".wasi-sdk") "wasi-sdk-25"
+$WasmtimeSdk = './src/Wasmtime/obj/wasmtime-dev-x86_64-windows-c-api/include'
+$WasiPath = Join-Path (Join-Path ( [Environment]::GetFolderPath("UserProfile") ) ".wasi-sdk") "wasi-sdk-24"
 
 ClangSharpPInvokeGenerator `
     -c compatible-codegen exclude-funcs-with-body `
