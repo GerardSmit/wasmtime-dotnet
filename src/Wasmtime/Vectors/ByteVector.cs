@@ -5,9 +5,9 @@ using Wasmtime.Interop;
 namespace Wasmtime;
 
 [System.Diagnostics.DebuggerDisplay("{DebuggerDisplay,nq}")]
-public unsafe struct ByteVector : IDisposable
+public readonly unsafe struct ByteVector : IDisposable
 {
-    private wasm_byte_vec_t _vector;
+    private readonly wasm_byte_vec_t _vector;
 
     public ByteVector()
     {
@@ -15,6 +15,11 @@ public unsafe struct ByteVector : IDisposable
         {
             wasm_byte_vec_new_empty(vec);
         }
+    }
+
+    internal ByteVector(wasm_byte_vec_t vector)
+    {
+        _vector = vector;
     }
 
     internal ByteVector(wasm_byte_vec_t* vector)

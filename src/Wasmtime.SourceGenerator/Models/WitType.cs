@@ -19,6 +19,8 @@ public record WitType(
     public static WitType String { get; } = new(WitTypeKind.String);
     public static WitType EmptyResult { get; } = new(WitTypeKind.Result);
 
+    public virtual bool MustBeDisposed => Kind is WitTypeKind.String;
+
     public virtual string GetCSharpType()
     {
         return Kind switch

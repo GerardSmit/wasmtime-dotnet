@@ -1,6 +1,7 @@
 ﻿using System.Collections.ObjectModel;
 using System.Text.RegularExpressions;
 using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.CSharp.Syntax;
 using SGF;
 using Wasmtime.SourceGenerator.Models;
 
@@ -210,15 +211,25 @@ public class ComponentSourceGenerator : IncrementalGenerator
 
             if (funcType.Parameters.Length > 0)
             {
+                var hasDisposable = false;
+
                 for (var index = 0; index < funcType.Parameters.Length; index++)
                 {
                     var param = funcType.Parameters[index];
+
+                    if (!param.Type.MustBeDisposed)
+                    {
+                        continue;
+                    }
+
                     sb.Append("using var p").Append(index).Append(" = ");
                     param.Type.WriteCSharpValueCreation(sb, param.Name);
                     sb.Append('(').Append(GetName(param.Name, false)).AppendLine(");");
+
+                    hasDisposable = true;
                 }
 
-                sb.AppendLine();
+                if (hasDisposable) sb.AppendLine();
 
                 sb.Append("Span<ComponentValue> parameters = ")
                     .Append("stackalloc ComponentValue[")
@@ -227,7 +238,19 @@ public class ComponentSourceGenerator : IncrementalGenerator
 
                 for (var i = 0; i < funcType.Parameters.Length; i++)
                 {
-                    sb.AppendLine($"parameters[{i}] = p{i};");
+                    var param = funcType.Parameters[i];
+
+                    sb.Append($"parameters[{i}] = ");
+
+                    if (param.Type.MustBeDisposed)
+                    {
+                        sb.Append('p').Append(i).AppendLine(";");
+                    }
+                    else
+                    {
+                        param.Type.WriteCSharpValueCreation(sb, GetName(param.Name, false));
+                        sb.Append('(').Append(GetName(param.Name, false)).AppendLine(");");
+                    }
                 }
 
                 sb.AppendLine();

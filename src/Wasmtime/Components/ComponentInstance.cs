@@ -52,14 +52,10 @@ public unsafe class ComponentInstance
                 (nuint)results.Length
             );
 
-            if (error == null)
-            {
-                return new ComponentCallResults(results);
-            }
-
-            WasmtimeException.Throw(error);
-            return default;
+            WasmtimeException.ThrowIfError(error);
         }
+
+        return new ComponentCallResults(results);
     }
 
 }

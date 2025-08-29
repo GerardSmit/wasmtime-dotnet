@@ -5,9 +5,9 @@ using Wasmtime.Interop;
 namespace Wasmtime;
 
 [System.Diagnostics.DebuggerDisplay("{DebuggerDisplay,nq}")]
-public unsafe struct TypeVector : IDisposable
+public readonly unsafe struct TypeVector : IDisposable
 {
-    private wasm_exporttype_vec_t _vec = new();
+    private readonly wasm_exporttype_vec_t _vec;
 
     public TypeVector()
     {

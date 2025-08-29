@@ -6,9 +6,12 @@ namespace Wasmtime;
 /// <summary>
 /// Represents a value used in component calls for Wasmtime.
 /// </summary>
-public unsafe struct ComponentValue : IDisposable
+public readonly struct ComponentValue : IDisposable
 {
-    private wasmtime_component_val _val;
+    // ** DO NOT ADD FIELDS TO THIS STRUCTURE. **
+    // This struct is a direct mapping to the native wasmtime_component_val structure.
+    // Adding fields will change the memory layout and break interop.
+    private readonly wasmtime_component_val _val;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="ComponentValue"/> struct with an existing native handle.
@@ -245,10 +248,7 @@ public unsafe struct ComponentValue : IDisposable
     {
         if (_val.kind == 12)
         {
-            fixed (wasm_byte_vec_t* str = &_val.of.@string)
-            {
-                wasm_byte_vec_delete(str);
-            }
+            new ByteVector(_val.of.@string).Dispose();
         }
     }
 }
