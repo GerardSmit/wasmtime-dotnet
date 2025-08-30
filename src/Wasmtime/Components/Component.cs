@@ -2,6 +2,7 @@
 using System.Collections.Concurrent;
 using System.Runtime.CompilerServices;
 using System.Text;
+using System.Threading;
 using Wasmtime.Interop;
 
 namespace Wasmtime;
@@ -11,34 +12,12 @@ namespace Wasmtime;
 /// </summary>
 public unsafe class Component : IDisposable
 {
-    private readonly ConcurrentDictionary<string, nint> _cachedExports = new();
-    private wasmtime_component_t* _handle;
-
-    /// <summary>
-    /// Instantiates the component using the specified <see cref="Linker"/> and <see cref="Store"/>.
-    /// </summary>
-    /// <param name="linker">The linker to use for instantiation.</param>
-    /// <param name="store">The store to use for instantiation.</param>
-    /// <returns>A new <see cref="ComponentInstance"/> representing the instantiated component.</returns>
-    /// <exception cref="WasmtimeException">Thrown if instantiation fails or WASI P2 is not consistently added.</exception>
-    public ComponentInstance CreateInstance(Linker linker, Store store)
-    {
-        if (linker.IsWasiP2Added != store.IsWasiP2Added)
-        {
-            throw new WasmtimeException("WASI P2 must be added to both the linker and the store");
-        }
-
-        wasmtime_component_instance instance;
-        var error = wasmtime_component_linker_instantiate(linker.ComponentHandle, store.Context, _handle, &instance);
-
-        WasmtimeException.ThrowIfError(error);
-
-        return new ComponentInstance(this, instance, store);
-    }
+    private readonly ConcurrentDictionary<string, nint> _cachedExports = new(StringComparer.Ordinal);
+    internal wasmtime_component_t* Handle;
 
     private Component(wasmtime_component_t* handle)
     {
-        _handle = handle;
+        Handle = handle;
     }
 
     internal bool TryGetExport(string name, out wasmtime_component_export_index_t* index)
@@ -69,7 +48,7 @@ public unsafe class Component : IDisposable
         fixed (byte* p = bytes)
         {
             var len = Encoding.UTF8.GetBytes(utf16, name.Length, p, bytes.Length);
-            index = wasmtime_component_get_export_index(_handle, null, p, (nuint)len);
+            index = wasmtime_component_get_export_index(Handle, null, p, (nuint)len);
 
             if (index == null)
             {
@@ -225,10 +204,10 @@ public unsafe class Component : IDisposable
 
         _cachedExports.Clear();
 
-        if (_handle != null)
+        if (Handle != null)
         {
-            wasmtime_component_delete(_handle);
-            _handle = null;
+            wasmtime_component_delete(Handle);
+            Handle = null;
         }
     }
 

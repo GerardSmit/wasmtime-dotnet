@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Threading;
 
 namespace Wasmtime;
 
@@ -12,14 +13,17 @@ namespace Wasmtime;
 /// </remarks>
 public readonly ref struct ComponentCallResults : IDisposable
 {
+    private readonly SemaphoreSlim? _semaphore;
     private readonly ComponentCallResultsInternal _result;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="ComponentCallResults"/> struct.
     /// </summary>
+    /// <param name="semaphore"></param>
     /// <param name="result">The internal result structure to wrap.</param>
-    internal ComponentCallResults(ComponentCallResultsInternal result)
+    internal ComponentCallResults(SemaphoreSlim? semaphore, ComponentCallResultsInternal result)
     {
+        _semaphore = semaphore;
         _result = result;
     }
 
@@ -215,5 +219,6 @@ public readonly ref struct ComponentCallResults : IDisposable
     public void Dispose()
     {
         _result.Dispose();
+        _semaphore?.Release();
     }
 }

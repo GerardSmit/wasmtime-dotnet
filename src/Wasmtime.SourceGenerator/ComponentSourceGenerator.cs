@@ -111,7 +111,10 @@ public class ComponentSourceGenerator : IncrementalGenerator
                                 continue;
                             }
 
-                            WriteFunction(sb, funcType, export);
+                            WriteFunction(sb, funcType, export, unsafeCall: false, functionParameter: false);
+                            WriteFunction(sb, funcType, export, unsafeCall: true, functionParameter: false);
+                            WriteFunction(sb, funcType, export, unsafeCall: false, functionParameter: true);
+                            WriteFunction(sb, funcType, export, unsafeCall: true, functionParameter: true);
                         }
 
                         sb.DecrementIndent();
@@ -166,7 +169,12 @@ public class ComponentSourceGenerator : IncrementalGenerator
         return char.ToUpperInvariant(result[0]) + result.Substring(1);
     }
 
-    private static void WriteFunction(IndentedStringBuilder sb, WitFuncType funcType, KeyValuePair<string, WitType> export)
+    private static void WriteFunction(
+        IndentedStringBuilder sb,
+        WitFuncType funcType,
+        KeyValuePair<string, WitType> export,
+        bool unsafeCall,
+        bool functionParameter)
     {
         sb.Append("");
         var position = sb.Length;
@@ -195,11 +203,23 @@ public class ComponentSourceGenerator : IncrementalGenerator
                 sb.Append(')');
             }
 
-            sb.Append(' ').Append(GetName(export.Key)).Append('(');
+            sb.Append(' ').Append(GetName(export.Key));
+
+            if (unsafeCall)
+            {
+                sb.Append("Unsafe");
+            }
+
+            sb.Append('(');
+
+            if (functionParameter)
+            {
+                sb.Append("ComponentInstanceFunction function");
+            }
 
             for (var i = 0; i < funcType.Parameters.Length; i++)
             {
-                if (i > 0) sb.Append(", ");
+                if (i > 0 || functionParameter) sb.Append(", ");
                 var param = funcType.Parameters.ElementAt(i);
                 param.Type.WriteCSharpType(sb);
                 sb.Append(' ').Append(GetName(param.Name, false));
@@ -260,9 +280,25 @@ public class ComponentSourceGenerator : IncrementalGenerator
                 sb.AppendLine("Span<ComponentValue> parameters = default;");
             }
 
-            sb.Append("using var result = _instance.Call(\"")
-                .Append(export.Key)
-                .Append("\", ")
+            sb.Append("using var result = _instance.Call");
+
+            if (unsafeCall)
+            {
+                sb.Append("Unsafe");
+            }
+
+            sb.Append("(");
+
+            if (functionParameter)
+            {
+                sb.Append("function, ");
+            }
+            else
+            {
+                sb.Append("\"").Append(export.Key).Append("\", ");
+            }
+
+            sb
                 .Append(funcType.Results.Length)
                 .AppendLine(", parameters);");
 
