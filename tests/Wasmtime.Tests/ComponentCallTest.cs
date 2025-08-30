@@ -50,7 +50,7 @@ public class ComponentCallTest
 
         await ExecuteConcurrent(
             () => state.Test,
-            s => Assert.Equal("UPPERCASE", s.Uppercase("uppercase")));
+            static s => Assert.Equal("UPPERCASE", s.Uppercase("uppercase")));
     }
 
     [Fact]
@@ -58,12 +58,11 @@ public class ComponentCallTest
     {
         using var state = new ComponentState();
 
+        var function = state.Instance.GetFunction("uppercase");
+
         await ExecuteConcurrent(
-            () => (
-                Wit: state.Test,
-                Function: state.Instance.GetFunction("uppercase")
-            ),
-            s => Assert.Equal("UPPERCASE", s.Wit.Uppercase(s.Function, "uppercase")));
+            () => (Wit: state.Test, Function: function),
+            static s => Assert.Equal("UPPERCASE", s.Wit.Uppercase(s.Function, "uppercase")));
     }
 
     private static async Task ExecuteConcurrent<TState>(Func<TState> createState, Action<TState> action)
@@ -86,7 +85,6 @@ public class ComponentCallTest
 
                 var state = createState();
 
-                // ReSharper disable once AccessToDisposedClosure
                 for (var j = 0; j < callsPerThread; j++)
                 {
                     action(state);
