@@ -248,6 +248,22 @@ public readonly struct EquatableArray<T> : IEquatable<EquatableArray<T>>, IEnume
 [ExcludeFromCodeCoverage]
 internal static class EquatableArray
 {
+    public static EquatableArray<T> Combine<T>(EquatableArray<T> left, EquatableArray<T> right)
+    {
+        var result = new T[left.Length + right.Length];
+        left.AsSpan().CopyTo(result);
+        right.AsSpan().CopyTo(result.AsSpan(left.Length));
+        return new EquatableArray<T>(result);
+    }
+
+    public static EquatableArray<T> Combine<T>(EquatableArray<T> left, T right)
+    {
+        var result = new T[left.Length + 1];
+        left.AsSpan().CopyTo(result);
+        result[^1] = right;
+        return new EquatableArray<T>(result);
+    }
+
     /// <summary>
     /// Creates an <see cref="EquatableArray{T}"/> instance from a given <see cref="ImmutableArray{T}"/>.
     /// </summary>

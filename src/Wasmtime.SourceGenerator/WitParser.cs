@@ -4,6 +4,7 @@ using Antlr4.Runtime.Tree;
 using Microsoft.CodeAnalysis;
 using Wasmtime.SourceGenerator.Models;
 using Wasmtime.SourceGenerator.Visitors;
+using System.Runtime.CompilerServices;
 
 namespace Wasmtime.SourceGenerator;
 
@@ -153,11 +154,7 @@ public class Wit
             return;
         }
 
-        Add(
-            name.Value,
-            version,
-            allPackages
-        );
+        Add(name.Value, version, allPackages);
     }
 
     private static WitWorld World(
@@ -166,7 +163,6 @@ public class Wit
         IEnumerable<IParseTree> items)
     {
         var worldItems = new List<WitTypeDef>();
-
         var packagePrefix = packageName.AddLastName(worldName);
 
         foreach (var item in items)
@@ -174,7 +170,7 @@ public class Wit
             if (item is WitParser.ExportContext exportContext)
             {
                 var name = exportContext.identifier().GetTextWithoutEscape();
-                var type = new WitTypeVisitor().Visit(exportContext.type());
+                var type = new WitTypeVisitor(packagePrefix).Visit(exportContext.type());
 
                 worldItems.Add(new WitWorldExport(name, type));
             }
@@ -201,7 +197,7 @@ public class Wit
 
         return new WitWorld(
             worldName,
-            worldItems.ToArray()
+            new WitTypeDefinitions(worldItems.ToArray())
         );
     }
 
@@ -221,11 +217,69 @@ public class Wit
                 recordContext.identifier().GetTextWithoutEscape(),
                 recordContext.recordDefinition().Select(x => new WitField(
                     x.identifier().GetTextWithoutEscape(),
-                    new WitTypeVisitor().Visit(x.type())
+                    new WitTypeVisitor(packageName.Value).Visit(x.type())
                 )).ToArray()
             );
         }
 
-        throw new NotSupportedException($"Type definition of kind '{context.GetType().Name}' is not supported.");
+        if (context.@interface() is { } interfaceContext)
+        {
+            var name = interfaceContext.identifier().GetTextWithoutEscape();
+            var path = packageName.Value.AddLastName(name);
+
+            return new WitInterface(
+                name,
+                new WitTypeDefinitions(interfaceContext.interfaceDefinition()
+                    .Where(x => x.typeDef() is not null)
+                    .Select(x => TypeDef(path, x.typeDef()))
+                    .ToArray()),
+                interfaceContext.interfaceDefinition()
+                    .Where(x => x.identifier() is not null)
+                    .Select(x => new WitField(
+                        x.identifier().GetTextWithoutEscape(),
+                        new WitTypeVisitor(path).Visit(x.type())
+                    ))
+                    .ToArray()
+            );
+        }
+
+        if (context.use() is { } useContext)
+        {
+            var items = new WitUseItem[useContext.useItem().Length];
+
+            for (var i = 0; i < useContext.useItem().Length; i++)
+            {
+                var useItem = useContext.useItem(i);
+                var name = useItem.identifier(0).GetTextWithoutEscape();
+
+                items[i] = new WitUseItem(
+                    name,
+                    useItem.identifier().Length > 1 ? useItem.identifier(1).GetTextWithoutEscape() : name
+                );
+            }
+
+            var container = WitPackageNameVersion.Parse(useContext.packageName());
+
+            if (container.IsIdentifierOnly)
+            {
+                return new WitUse(
+                    packageName.Value,
+                    container.PackageName.AllParts[0],
+                    items
+                );
+            }
+
+            var (otherName, otherPackage) = container.WithoutLastNamePart();
+
+            return new WitUse(
+                otherPackage,
+                otherName,
+                items
+            );
+
+
+        }
+
+        throw new NotSupportedException($"Type definition of kind '{context.children.First().GetType().Name}' is not supported.");
     }
 }

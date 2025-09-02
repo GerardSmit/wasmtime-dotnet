@@ -5,7 +5,7 @@ namespace Wasmtime.SourceGenerator.Visitors;
 /// <summary>
 /// Visits a type context and produces a corresponding <see cref="WitType"/>.
 /// </summary>
-public class WitTypeVisitor : WitParserBaseVisitor<WitType>
+public class WitTypeVisitor(WitPackageNameVersion package) : WitParserBaseVisitor<WitType>
 {
     public override WitType VisitS8Type(WitParser.S8TypeContext context)
     {
@@ -19,9 +19,9 @@ public class WitTypeVisitor : WitParserBaseVisitor<WitType>
 
     public override WitType VisitCustomType(WitParser.CustomTypeContext context)
     {
-        return new WitCustomType(
-            context.identifier().GetTextWithoutEscape()
-        );
+        var name = context.identifier().GetTextWithoutEscape();
+
+        return new WitCustomType(package, name);
     }
 
     public override WitType VisitBoolType(WitParser.BoolTypeContext context)

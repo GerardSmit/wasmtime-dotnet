@@ -1,66 +1,109 @@
 ﻿namespace Wasmtime.SourceGenerator.Models;
 
-public record WitCustomType(string Name) : WitType(WitTypeKind.User)
+/// <summary>
+/// Represents a user-defined type.
+/// </summary>
+/// <param name="Package">The package that requested this type. It's possible that the type is defined in the previous name parts.</param>
+/// <param name="Name">The name of the type.</param>
+public record WitCustomType(WitPackageNameVersion Package, string Name) : WitType(WitTypeKind.User)
 {
-    /// <inheritdoc />
-    public override void WriteCSharpType(IndentedStringBuilder sb, WorldTypeResolver resolver)
+    /// <summary>
+    /// Gets the container that holds this type.
+    /// </summary>
+    /// <param name="resolver">The type resolver to use.</param>
+    /// <param name="allowContainer">If the type was not found, allow returning a container with the same name. This is used for subtypes.</param>
+    /// <returns>The container that holds this type.</returns>
+    protected internal virtual ITypeContainer GetContainer(ITypeContainerResolver resolver, bool allowContainer = false)
     {
-        resolver.Resolve(Name).WriteCSharpType(sb, resolver);
+        var current = Package;
+
+        while (current.PackageName.Name.Length > 0)
+        {
+            var container = resolver.Resolve(current);
+
+            if (container.TryGetType(Name, out _) || (allowContainer && container.TryGetContainer(Name, out _)))
+            {
+                return container;
+            }
+
+            // The current type was not found, try the previous name parts
+            (_, current) = current.WithoutLastNamePart();
+        }
+
+        throw new InvalidOperationException($"Could not resolve type '{Name}' in '{Package}'");
+    }
+
+    private WitType Resolve(ITypeContainerResolver resolver)
+    {
+        var container = GetContainer(resolver, allowContainer: false);
+
+        if (!container.TryGetType(Name, out var type))
+        {
+            throw new InvalidOperationException($"Could not resolve type '{Name}' in '{Package}'");
+        }
+
+        return type;
     }
 
     /// <inheritdoc />
-    public override void WriteResultGetter(IndentedStringBuilder sb, string paramName, int index, WorldTypeResolver resolver)
+    public override void WriteCSharpType(IndentedStringBuilder sb, ITypeContainerResolver resolver)
     {
-        resolver.Resolve(Name).WriteResultGetter(sb, paramName, index, resolver);
+        Resolve(resolver).WriteCSharpType(sb, resolver);
     }
 
     /// <inheritdoc />
-    public override int GetParameterSize(WorldTypeResolver resolver)
+    public override void WriteResultGetter(IndentedStringBuilder sb, string paramName, int index, ITypeContainerResolver resolver)
     {
-        return resolver.Resolve(Name).GetParameterSize(resolver);
+        Resolve(resolver).WriteResultGetter(sb, paramName, index, resolver);
     }
 
     /// <inheritdoc />
-    public override void WriteParameter(IndentedStringBuilder sb, string name, WorldTypeResolver resolver)
+    public override int GetParameterSize(ITypeContainerResolver resolver)
     {
-        resolver.Resolve(Name).WriteParameter(sb, name, resolver);
+        return Resolve(resolver).GetParameterSize(resolver);
     }
 
     /// <inheritdoc />
-    public override void WriteParameterInitializer(IndentedStringBuilder sb, string name, WorldTypeResolver resolver,
+    public override void WriteParameter(IndentedStringBuilder sb, string name, ITypeContainerResolver resolver)
+    {
+        Resolve(resolver).WriteParameter(sb, name, resolver);
+    }
+
+    /// <inheritdoc />
+    public override void WriteParameterInitializer(IndentedStringBuilder sb, string name, ITypeContainerResolver resolver,
         bool isMemoryInitializer)
     {
-        resolver.Resolve(Name).WriteParameterInitializer(sb, name, resolver, isMemoryInitializer);
+        Resolve(resolver).WriteParameterInitializer(sb, name, resolver, isMemoryInitializer);
     }
 
     /// <inheritdoc />
-    public override void WriteParameterSetter(IndentedStringBuilder sb, string parametersVariable, string name, int startIndex, WorldTypeResolver resolver)
+    public override void WriteParameterSetter(IndentedStringBuilder sb, string parametersVariable, string name, int startIndex, ITypeContainerResolver resolver)
     {
-        resolver.Resolve(Name).WriteParameterSetter(sb, parametersVariable, name, startIndex, resolver);
+        Resolve(resolver).WriteParameterSetter(sb, parametersVariable, name, startIndex, resolver);
     }
 
-    public override string GetCSharpType(WorldTypeResolver resolver)
+    public override string GetCSharpType(ITypeContainerResolver resolver)
     {
-        return resolver.Resolve(Name).GetCSharpType(resolver);
+        return Resolve(resolver).GetCSharpType(resolver);
     }
 
-    public override void WriteBytes(IndentedStringBuilder sb, string name, string span, WorldTypeResolver resolver)
+    public override void WriteBytes(IndentedStringBuilder sb, string name, string span, ITypeContainerResolver resolver)
     {
-        resolver.Resolve(Name).WriteBytes(sb, name, span, resolver);
+        Resolve(resolver).WriteBytes(sb, name, span, resolver);
     }
 
-    public override int GetMemorySize(WorldTypeResolver resolver)
+    public override int GetMemorySize(ITypeContainerResolver resolver)
     {
-        return resolver.Resolve(Name).GetMemorySize(resolver);
+        return Resolve(resolver).GetMemorySize(resolver);
     }
 
-    public override void WriteComponentValue(IndentedStringBuilder sb, string name, WorldTypeResolver resolver)
+    public override void WriteComponentValue(IndentedStringBuilder sb, string name, ITypeContainerResolver resolver)
     {
-        resolver.Resolve(Name).WriteComponentValue(sb, name, resolver);
+        Resolve(resolver).WriteComponentValue(sb, name, resolver);
     }
 
-    public override void WriteValueGetter(IndentedStringBuilder sb, string paramName, WorldTypeResolver resolver)
+    public override void WriteValueGetter(IndentedStringBuilder sb, string paramName, ITypeContainerResolver resolver)
     {
-        resolver.Resolve(Name).WriteValueGetter(sb, paramName, resolver);
+        Resolve(resolver).WriteValueGetter(sb, paramName, resolver);
     }
 }

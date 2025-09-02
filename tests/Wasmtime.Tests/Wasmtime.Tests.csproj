@@ -24,7 +24,7 @@
     </ItemGroup>
 
     <ItemGroup>
-        <AdditionalFiles Include="..\Wasmtime.Components.Tests\component.wit" />
+        <AdditionalFiles Include="..\Wasmtime.Components.Tests\**\*.wit" Link="%(RecursiveDir)%(Filename)%(Extension)" Exclude="**/bin/**;**/obj/**" />
     </ItemGroup>
 
     <ItemGroup>

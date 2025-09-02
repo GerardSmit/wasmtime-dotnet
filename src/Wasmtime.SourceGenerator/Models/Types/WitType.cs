@@ -28,7 +28,7 @@ public record WitType(WitTypeKind Kind)
     /// </summary>
     /// <param name="resolver"></param>
     /// <returns>The C# type as a string.</returns>
-    public virtual string GetCSharpType(WorldTypeResolver resolver)
+    public virtual string GetCSharpType(ITypeContainerResolver resolver)
     {
         return Kind switch
         {
@@ -54,12 +54,12 @@ public record WitType(WitTypeKind Kind)
     /// </summary>
     /// <param name="sb">The <see cref="IndentedStringBuilder"/> to write to.</param>
     /// <param name="resolver"></param>
-    public virtual void WriteCSharpType(IndentedStringBuilder sb, WorldTypeResolver resolver)
+    public virtual void WriteCSharpType(IndentedStringBuilder sb, ITypeContainerResolver resolver)
     {
         sb.Append(GetCSharpType(resolver));
     }
 
-    private void WriteCreateComponentValue(IndentedStringBuilder sb, string paramKey, WorldTypeResolver resolver)
+    private void WriteCreateComponentValue(IndentedStringBuilder sb, string paramKey, ITypeContainerResolver resolver)
     {
         sb.Append("global::Wasmtime.ComponentValue.");
 
@@ -92,7 +92,7 @@ public record WitType(WitTypeKind Kind)
     /// <param name="paramName">The name of the parameter variable.</param>
     /// <param name="index">The index of the parameter in the parameter list.</param>
     /// <param name="resolver"></param>
-    public virtual void WriteResultGetter(IndentedStringBuilder sb, string paramName, int index, WorldTypeResolver resolver)
+    public virtual void WriteResultGetter(IndentedStringBuilder sb, string paramName, int index, ITypeContainerResolver resolver)
     {
         sb.Append(paramName).Append('.');
 
@@ -125,7 +125,7 @@ public record WitType(WitTypeKind Kind)
     /// <param name="paramName">The name of the parameter variable.</param>
     /// <param name="index">The index of the parameter in the parameter list.</param>
     /// <param name="resolver"></param>
-    public virtual void WriteValueGetter(IndentedStringBuilder sb, string paramName, WorldTypeResolver resolver)
+    public virtual void WriteValueGetter(IndentedStringBuilder sb, string paramName, ITypeContainerResolver resolver)
     {
         sb.Append(paramName).Append('.');
 
@@ -155,7 +155,7 @@ public record WitType(WitTypeKind Kind)
     /// </summary>
     /// <param name="resolver">The type resolver.</param>
     /// <returns>The number of parameters.</returns>
-    public virtual int GetParameterSize(WorldTypeResolver resolver) => 1;
+    public virtual int GetParameterSize(ITypeContainerResolver resolver) => 1;
 
     /// <summary>
     /// Writes the parameter declaration.
@@ -163,7 +163,7 @@ public record WitType(WitTypeKind Kind)
     /// <param name="sb">The <see cref="IndentedStringBuilder"/> to write to.</param>
     /// <param name="name">The name of the parameter.</param>
     /// <param name="resolver">The type resolver.</param>
-    public virtual void WriteParameter(IndentedStringBuilder sb, string name, WorldTypeResolver resolver)
+    public virtual void WriteParameter(IndentedStringBuilder sb, string name, ITypeContainerResolver resolver)
     {
         WriteCSharpType(sb, resolver);
         sb.Append(' ').Append(name);
@@ -176,7 +176,7 @@ public record WitType(WitTypeKind Kind)
     /// <param name="name">The name of the parameter.</param>
     /// <param name="resolver">The type resolver.</param>
     /// <param name="isMemoryInitializer"></param>
-    public virtual void WriteParameterInitializer(IndentedStringBuilder sb, string name, WorldTypeResolver resolver, bool isMemoryInitializer)
+    public virtual void WriteParameterInitializer(IndentedStringBuilder sb, string name, ITypeContainerResolver resolver, bool isMemoryInitializer)
     {
         if (!MustBeDisposed) return;
 
@@ -193,20 +193,20 @@ public record WitType(WitTypeKind Kind)
     /// <param name="name">The name of the parameter.</param>
     /// <param name="startIndex">The start index in the parameters span.</param>
     /// <param name="resolver">The type resolver.</param>
-    public virtual void WriteParameterSetter(IndentedStringBuilder sb, string parametersVariable, string name, int startIndex, WorldTypeResolver resolver)
+    public virtual void WriteParameterSetter(IndentedStringBuilder sb, string parametersVariable, string name, int startIndex, ITypeContainerResolver resolver)
     {
         sb.Append(parametersVariable).Append("[").Append(startIndex).Append("] = ");
         WriteComponentValue(sb, name, resolver);
         sb.AppendLine(";");
     }
 
-    public virtual void WriteBytes(IndentedStringBuilder sb, string name, string span, WorldTypeResolver resolver)
+    public virtual void WriteBytes(IndentedStringBuilder sb, string name, string span, ITypeContainerResolver resolver)
     {
         WriteComponentValue(sb, name, resolver);
         sb.Append(".WriteBytes(").Append(span).AppendLine(");");
     }
 
-    public virtual void WriteComponentValue(IndentedStringBuilder sb, string name, WorldTypeResolver resolver)
+    public virtual void WriteComponentValue(IndentedStringBuilder sb, string name, ITypeContainerResolver resolver)
     {
         if (MustBeDisposed)
         {
@@ -218,7 +218,7 @@ public record WitType(WitTypeKind Kind)
         }
     }
 
-    public virtual int GetMemorySize(WorldTypeResolver resolver)
+    public virtual int GetMemorySize(ITypeContainerResolver resolver)
     {
         return Kind switch
         {

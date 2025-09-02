@@ -1,4 +1,5 @@
 ﻿using System.Collections.Immutable;
+using System.Diagnostics;
 using System.Runtime.CompilerServices;
 using System.Text.RegularExpressions;
 using Microsoft.CodeAnalysis;
@@ -15,6 +16,7 @@ public class ComponentSourceGenerator() : IncrementalGenerator("ComponentSourceG
 
     private static readonly Regex DashRegex = new("-(.)?", RegexOptions.Compiled);
 
+    /// <inheritdoc/>
     public override void OnInitialize(SgfInitializationContext context)
     {
         // WIT files
@@ -27,55 +29,128 @@ public class ComponentSourceGenerator() : IncrementalGenerator("ComponentSourceG
         var witFiles = rawWitFiles
             .Select(ParseWitDirectory);
 
-        // Generate the source
         var packages = witFiles
-            .SelectMany((x, _) => x.Packages);
-
-        context.RegisterSourceOutput(packages, GenerateWitAccessor);
-
-        var constants = witFiles
-            .SelectMany((x, _) => x.Packages.Values)
-            .SelectMany((x, _) =>
-            {
-                var constants = new HashSet<string>();
-
-                foreach (var version in x.Versions)
-                {
-                    var items = version.Value.Items;
-
-                    VisitConstants(items, constants);
-
-                    foreach (var world in version.Value.Worlds.Values)
-                    {
-                        VisitConstants(world.Items, constants);
-                    }
-                }
-
-                var array = constants.ToArray();
-                Array.Sort(array, StringComparer.Ordinal);
-                return Unsafe.As<string[], ImmutableArray<string>>(ref array);
-            })
+            .SelectMany((x, _) => x.Packages)
             .Collect();
 
+        var constants = packages
+            .Select(GetAllConstants);
+
+        // Generate the source
+        context.RegisterSourceOutput(packages, GenerateWitAccessor);
         context.RegisterSourceOutput(constants, GenerateConstants);
     }
 
-    private static void VisitConstants(EquatableArray<WitTypeDef> items, HashSet<string> constants)
+    /// <summary>
+    /// Groups all files by their directory.
+    /// </summary>
+    /// <param name="array">Array of file paths and contents.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>Enumerable of <see cref="WitRawDirectory"/>.</returns>
+    private static IEnumerable<WitRawDirectory> GetRawDirectories(ImmutableArray<(string path, string content)> array, CancellationToken ct)
     {
-        foreach (var item in items)
+        var dictionary = new Dictionary<string, ImmutableArray<string>.Builder>(StringComparer.OrdinalIgnoreCase);
+
+        foreach (var (path, content) in array)
         {
-            if (item is not WitRecord record) continue;
+            var directory = Path.GetDirectoryName(path) ?? string.Empty;
 
-            constants.Add(record.Name);
-
-            foreach (var field in record.Fields)
+            if (!dictionary.TryGetValue(directory, out var includes))
             {
-                constants.Add(field.Name);
+                includes = ImmutableArray.CreateBuilder<string>();
+                dictionary[directory] = includes;
+            }
+
+            includes.Add(content);
+        }
+
+        var results = ImmutableArray.CreateBuilder<WitRawDirectory>(dictionary.Count);
+
+        foreach (var kv in dictionary)
+        {
+            results.Add(new WitRawDirectory(kv.Key, kv.Value.ToImmutable()));
+        }
+
+        return results;
+    }
+
+    /// <summary>
+    /// Parses a WIT file and returns a <see cref="WitDirectory"/> instance.
+    /// </summary>
+    /// <param name="directory">The raw WIT file.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>The parsed <see cref="WitDirectory"/> or <see cref="WitDirectory.Empty"/> if parsing failed.</returns>
+    private static WitDirectory ParseWitDirectory(WitRawDirectory directory, CancellationToken ct)
+    {
+        try
+        {
+            return Wit.Parse(directory);
+        }
+        catch
+        {
+            return WitDirectory.Empty;
+        }
+    }
+
+    /// <summary>
+    /// Gets all constant names from the WIT packages.
+    /// </summary>
+    /// <param name="packages">The WIT packages.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>Array of constant names.</returns>
+    private static ImmutableArray<string> GetAllConstants(ImmutableArray<KeyValuePair<WitPackageName, WitPackage>> packages, CancellationToken ct)
+    {
+        var constants = new HashSet<string>();
+
+        foreach (var kv in packages)
+        {
+            var package = kv.Value;
+
+            foreach (var version in package.Versions)
+            {
+                var items = version.Value.Definitions.Items;
+
+                VisitConstants(items, constants);
+
+                foreach (var world in version.Value.Worlds.Values)
+                {
+                    VisitConstants(world.Definitions.Items, constants);
+                }
+            }
+        }
+
+        var array = constants.ToArray();
+        Array.Sort(array, StringComparer.Ordinal);
+        return Unsafe.As<string[], ImmutableArray<string>>(ref array);
+
+        static void VisitConstants(EquatableArray<WitTypeDef> items, HashSet<string> constants)
+        {
+            foreach (var item in items)
+            {
+                if (item is WitRecord record)
+                {
+                    constants.Add(record.Name);
+
+                    foreach (var field in record.Fields)
+                    {
+                        constants.Add(field.Name);
+                    }
+                }
+
+                if (item is WitInterface interf)
+                {
+                    VisitConstants(interf.Definitions.Items, constants);
+                }
             }
         }
     }
 
-    private void GenerateConstants(SgfSourceProductionContext ctx, ImmutableArray<string> names)
+    /// <summary>
+    /// Generates the C# constants for WIT names.
+    /// </summary>
+    /// <param name="ctx">The source production context.</param>
+    /// <param name="names">The constant names.</param>
+    private static void GenerateConstants(SgfSourceProductionContext ctx, ImmutableArray<string> names)
     {
         var sb = _indentedStringBuilder ??= new IndentedStringBuilder();
 
@@ -110,75 +185,40 @@ public class ComponentSourceGenerator() : IncrementalGenerator("ComponentSourceG
     }
 
     /// <summary>
-    /// Groups all files by their directory.
-    /// </summary>
-    /// <param name="array">Array of file paths and contents.</param>
-    /// <param name="ct">Cancellation token.</param>
-    /// <returns>Enumerable of <see cref="WitRawDirectory"/>.</returns>
-    private static IEnumerable<WitRawDirectory> GetRawDirectories(ImmutableArray<(string path, string content)> array, CancellationToken ct)
-    {
-        var dictionary = new Dictionary<string, ImmutableArray<string>.Builder>(StringComparer.OrdinalIgnoreCase);
-
-        foreach (var (path, content) in array)
-        {
-            var directory = Path.GetDirectoryName(path) ?? string.Empty;
-
-            if (!dictionary.TryGetValue(directory, out var includes))
-            {
-                includes = ImmutableArray.CreateBuilder<string>();
-                dictionary[path] = includes;
-            }
-
-            includes.Add(content);
-        }
-
-        var results = ImmutableArray.CreateBuilder<WitRawDirectory>(dictionary.Count);
-
-        foreach (var kv in dictionary)
-        {
-            results.Add(new WitRawDirectory(kv.Key, kv.Value.ToImmutable()));
-        }
-
-        return results;
-    }
-
-    /// <summary>
-    /// Parses a WIT file and returns a <see cref="WitDirectory"/> instance.
-    /// </summary>
-    /// <param name="file">The raw WIT file.</param>
-    /// <param name="ct">Cancellation token.</param>
-    /// <returns>The parsed <see cref="WitDirectory"/> or <see cref="WitDirectory.Empty"/> if parsing failed.</returns>
-    private static WitDirectory ParseWitDirectory(WitRawDirectory file, CancellationToken ct)
-    {
-        try
-        {
-            return Wit.Parse(file);
-        }
-        catch
-        {
-            return WitDirectory.Empty;
-        }
-    }
-
-    /// <summary>
     /// Generates the C# accessor for a WIT package.
     /// </summary>
     /// <param name="ctx">The source production context.</param>
-    /// <param name="package">The WIT package to generate the accessor for.</param>
+    /// <param name="packages">All WIT packages.</param>
     private static void GenerateWitAccessor(
         SgfSourceProductionContext ctx,
-        KeyValuePair<WitPackageName, WitPackage> package)
+        ImmutableArray<KeyValuePair<WitPackageName, WitPackage>> packages)
     {
-        var (name, content) = GenerateWitAccessor(package);
+        var solutionTypeResolver = new SolutionTypeContainerResolver(packages.Select(x => x.Value));
 
-        ctx.AddSource(name, content);
+        foreach (var kv in solutionTypeResolver.Packages)
+        {
+            try
+            {
+                var (name, content) = GenerateWitAccessor(kv, solutionTypeResolver);
+
+                ctx.AddSource(name, content);
+            }
+            catch (Exception e)
+            {
+                ctx.ReportDiagnostic(Diagnostic.Create(
+                    DiagnosticMessages.Error,
+                    Location.None,
+                    kv.Key,
+                    e.Message));
+            }
+        }
     }
 
     /// <summary>
     /// Generates the C# accessor for a WIT package.
     /// </summary>
     /// <param name="package">The WIT package to generate the accessor for.</param>
-    public static (string Path, string Content) GenerateWitAccessor(KeyValuePair<WitPackageName, WitPackage> package)
+    public static (string Path, string Content) GenerateWitAccessor(KeyValuePair<WitPackageName, WitPackage> package, SolutionTypeContainerResolver solutionResolver)
     {
         var nameBuilder = _stringBuilder ??= new System.Text.StringBuilder(256);
         var sb = _indentedStringBuilder ??= new IndentedStringBuilder();
@@ -224,7 +264,6 @@ public class ComponentSourceGenerator() : IncrementalGenerator("ComponentSourceG
 
         foreach (var world in version.Worlds)
         {
-            var resolver = new WorldTypeResolver(version, world.Value);
             var className = GetName(world.Value.Name);
 
             if (world.Value.Name == lastPart)
@@ -252,7 +291,7 @@ public class ComponentSourceGenerator() : IncrementalGenerator("ComponentSourceG
             sb.AppendLine();
 
             // Exports
-            foreach (var export in world.Value.Items.OfType<WitWorldExport>())
+            foreach (var export in world.Value.Definitions.Items.OfType<WitWorldExport>())
             {
                 if (export.Type.Kind != WitTypeKind.Func || export.Type is not WitFuncType funcType)
                 {
@@ -262,7 +301,7 @@ public class ComponentSourceGenerator() : IncrementalGenerator("ComponentSourceG
 
                 try
                 {
-                    WriteFunction(sb, funcType, export, resolver);
+                    WriteFunction(sb, funcType, export, solutionResolver);
                 }
                 catch (Exception e)
                 {
@@ -270,15 +309,17 @@ public class ComponentSourceGenerator() : IncrementalGenerator("ComponentSourceG
                 }
             }
 
-            if (world.Value.Items.Length > 0)
+            if (world.Value.Definitions.Items.Length > 0)
             {
-                WriteItems(sb, world.Value.Items, resolver);
+                WriteItems(sb, world.Value.Definitions.Items, solutionResolver);
             }
 
             sb.DecrementIndent();
             sb.AppendLine("}");
             sb.AppendLine();
         }
+
+        WriteItems(sb, version.Definitions.Items, solutionResolver);
 
         foreach (var unused in package.Key.AllParts)
         {
@@ -300,11 +341,11 @@ public class ComponentSourceGenerator() : IncrementalGenerator("ComponentSourceG
         return result;
     }
 
-    private static void WriteItems(IndentedStringBuilder sb, EquatableArray<WitTypeDef> valueItems, WorldTypeResolver resolver)
+    private static void WriteItems(IndentedStringBuilder sb, EquatableArray<WitTypeDef> valueItems, ITypeContainerResolver resolver)
     {
         foreach (var item in valueItems)
         {
-            if (item is WitWorldExport)
+            if (item is WitWorldExport or WitUse)
             {
                 // Ignore world exports: they are handled in 'GenerateWitAccessor'.
                 continue;
@@ -315,6 +356,10 @@ public class ComponentSourceGenerator() : IncrementalGenerator("ComponentSourceG
                 WriteRecord(sb, record, resolver);
                 sb.AppendLine();
             }
+            else if (item is WitInterface interf)
+            {
+                WriteInterface(sb, interf, resolver);
+            }
             else
             {
                 sb.AppendLine($"// Unsupported item of type '{item.GetType().Name}'");
@@ -322,7 +367,25 @@ public class ComponentSourceGenerator() : IncrementalGenerator("ComponentSourceG
         }
     }
 
-    private static void WriteRecord(IndentedStringBuilder sb, WitRecord record, WorldTypeResolver resolver)
+    private static void WriteInterface(IndentedStringBuilder sb, WitInterface interf, ITypeContainerResolver resolver)
+    {
+        var name = GetName(interf.Name);
+
+        sb.Append("public interface ").AppendLine(name);
+        sb.AppendLine("{");
+        sb.IncrementIndent();
+
+        if (interf.Definitions.Items.Length > 0)
+        {
+            WriteItems(sb, interf.Definitions.Items, resolver);
+        }
+
+        sb.DecrementIndent();
+        sb.AppendLine("}");
+        sb.AppendLine();
+    }
+
+    private static void WriteRecord(IndentedStringBuilder sb, WitRecord record, ITypeContainerResolver resolver)
     {
         var name = GetName(record.Name);
 
@@ -380,7 +443,7 @@ public class ComponentSourceGenerator() : IncrementalGenerator("ComponentSourceG
         IndentedStringBuilder sb,
         WitFuncType funcType,
         WitWorldExport export,
-        WorldTypeResolver resolver)
+        ITypeContainerResolver resolver)
     {
         sb.Append("");
         var position = sb.Length;

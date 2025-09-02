@@ -1,22 +1,20 @@
-﻿namespace Wasmtime.SourceGenerator.Models;
+﻿using System.Diagnostics.CodeAnalysis;
+
+namespace Wasmtime.SourceGenerator.Models;
 
 public record WitWorld(
     string Name,
-    EquatableArray<WitTypeDef> Items
-);
-
-public record WitTypeDef;
-
-public record WitRecord(
-    WitPackageNameVersion Package,
-    string Name,
-    EquatableArray<WitField> Fields) : WitTypeDef
+    WitTypeDefinitions Definitions
+) : ITypeContainer
 {
-    public WitType Type { get; } = new WitRecordType(Package, Name, Fields);
+    public bool TryGetType(string name, [NotNullWhen(true)] out WitType? type)
+    {
+        return Definitions.TryGetType(name, out type);
+    }
+
+    public bool TryGetContainer(string name, [NotNullWhen(true)] out ITypeContainer? container)
+    {
+        container = null;
+        return false;
+    }
 }
-
-public record WitWorldItem : WitTypeDef;
-
-public record WitWorldExport(string ExportName, WitType Type) : WitWorldItem;
-
-public record WitWorldInclude(WitPackageNameVersion Package, string WorldName) : WitWorldItem;

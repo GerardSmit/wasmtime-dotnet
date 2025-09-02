@@ -11,7 +11,7 @@ file
 fileDefinition
     : package
     | world
-    | interface
+    | typeDef
     ;
 
 type
@@ -131,6 +131,16 @@ typeDef
     | flags
     | enum
     | typeAlias
+    | use
+    | interface
+    ;
+
+use
+    : Use packageName Dot OpenCurly (useItem (Comma useItem)*)? CloseCurly Semicolon
+    ;
+
+useItem
+    : identifier (As identifier)?
     ;
 
 package
@@ -160,7 +170,7 @@ variantDefinition
 
 packageDefinition
     : world
-    | interface
+    | typeDef
     ;
 
 filePackage

@@ -27,5 +27,6 @@ public enum WitTypeKind
     Future,
     Stream,
     Func,
-    User
+    User,
+    Interface
 }

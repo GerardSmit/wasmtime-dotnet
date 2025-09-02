@@ -8,7 +8,7 @@ public record WitRecordType(WitPackageNameVersion Package, string Name, Equatabl
     public override bool MustBeDisposed => true;
 
     /// <inheritdoc />
-    public override void WriteCSharpType(IndentedStringBuilder sb, WorldTypeResolver resolver)
+    public override void WriteCSharpType(IndentedStringBuilder sb, ITypeContainerResolver resolver)
     {
         sb.Append("global::");
         Package.PackageName.WritePath(sb);
@@ -20,7 +20,7 @@ public record WitRecordType(WitPackageNameVersion Package, string Name, Equatabl
     public override void WriteParameterInitializer(
         IndentedStringBuilder sb,
         string name,
-        WorldTypeResolver resolver,
+        ITypeContainerResolver resolver,
         bool isMemoryInitializer)
     {
         var builderName = $"builder_{name.Replace('.', '_')}";
@@ -49,35 +49,35 @@ public record WitRecordType(WitPackageNameVersion Package, string Name, Equatabl
     }
 
     /// <inheritdoc />
-    public override void WriteParameterSetter(IndentedStringBuilder sb, string parametersVariable, string name, int startIndex, WorldTypeResolver resolver)
+    public override void WriteParameterSetter(IndentedStringBuilder sb, string parametersVariable, string name, int startIndex, ITypeContainerResolver resolver)
     {
         sb.Append(parametersVariable).Append("[").Append(startIndex).Append("] = global::Wasmtime.ComponentValue.CreateRecord(builder_").Append(name.Replace('.', '_')).AppendLine(");");
     }
 
-    public override void WriteComponentValue(IndentedStringBuilder sb, string name, WorldTypeResolver resolver)
+    public override void WriteComponentValue(IndentedStringBuilder sb, string name, ITypeContainerResolver resolver)
     {
         sb.Append("global::Wasmtime.ComponentValue.CreateRecord(builder_").Append(name.Replace('.', '_')).Append(")");
     }
 
-    public override void WriteValueGetter(IndentedStringBuilder sb, string paramName, WorldTypeResolver resolver)
+    public override void WriteValueGetter(IndentedStringBuilder sb, string paramName, ITypeContainerResolver resolver)
     {
         WriteCSharpType(sb, resolver);
         sb.Append(".Create(").Append(paramName).Append(".ToRecordBuilder())");
     }
 
     /// <inheritdoc />
-    public override void WriteResultGetter(IndentedStringBuilder sb, string paramName, int index, WorldTypeResolver resolver)
+    public override void WriteResultGetter(IndentedStringBuilder sb, string paramName, int index, ITypeContainerResolver resolver)
     {
         WriteCSharpType(sb, resolver);
         sb.Append(".Create(").Append(paramName).Append(".GetRecordBuilder(").Append(index).Append("))");
     }
 
-    public override int GetMemorySize(WorldTypeResolver resolver)
+    public override int GetMemorySize(ITypeContainerResolver resolver)
     {
         return Fields.Sum(f => f.Type.GetMemorySize(resolver));
     }
 
-    public override void WriteBytes(IndentedStringBuilder sb, string name, string baseSpan, WorldTypeResolver resolver)
+    public override void WriteBytes(IndentedStringBuilder sb, string name, string baseSpan, ITypeContainerResolver resolver)
     {
         var offset = 0;
 

@@ -9,7 +9,7 @@ public record WitTupleType(
 {
     /// <param name="resolver"></param>
     /// <inheritdoc />
-    public override string GetCSharpType(WorldTypeResolver resolver)
+    public override string GetCSharpType(ITypeContainerResolver resolver)
     {
         if (ElementTypes.Length == 0)
         {
@@ -20,7 +20,7 @@ public record WitTupleType(
     }
 
     /// <inheritdoc />
-    public override void WriteCSharpType(IndentedStringBuilder sb, WorldTypeResolver resolver)
+    public override void WriteCSharpType(IndentedStringBuilder sb, ITypeContainerResolver resolver)
     {
         if (ElementTypes.Length == 0)
         {

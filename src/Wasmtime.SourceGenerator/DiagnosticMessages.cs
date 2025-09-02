@@ -12,5 +12,13 @@ public static class DiagnosticMessages
         DiagnosticSeverity.Error,
         isEnabledByDefault: true);
 
+    public static readonly DiagnosticDescriptor Error = new(
+        id: "WSGEN002",
+        title: "Error while processing",
+        messageFormat: "An error occurred while processing the package '{0}': {1}",
+        category: WitGen,
+        DiagnosticSeverity.Error,
+        isEnabledByDefault: true);
+
     public const string WitGen = "WitGen";
 }

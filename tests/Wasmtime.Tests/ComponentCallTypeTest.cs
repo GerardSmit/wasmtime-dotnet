@@ -109,16 +109,12 @@ public class ComponentCallTypeTest
     {
         using var state = new ComponentState();
 
-        var position = new Wit.Tests.Test.Test_.Point
-        {
-            X = 10,
-            Y = 20
-        };
+        var result = state.Test.AddPoint(
+            new() { X = 1, Y = 3 },
+            new() { X = 2, Y = 4 });
 
-        var result = state.Test.AddPoint(position, position);
-
-        Assert.Equal(20, result.X);
-        Assert.Equal(40, result.Y);
+        Assert.Equal(3, result.X);
+        Assert.Equal(7, result.Y);
     }
 
     [Fact]
@@ -126,11 +122,11 @@ public class ComponentCallTypeTest
     {
         using var state = new ComponentState();
 
-        state.Test.RegisterEntity(new Wit.Tests.Test.Test_.Entity
+        state.Test.RegisterEntity(new()
         {
             Id = 1,
             Name = "Entity",
-            Position = new Wit.Tests.Test.Test_.Point
+            Position = new()
             {
                 X = 10,
                 Y = 20
@@ -153,7 +149,7 @@ internal readonly struct ComponentState : IDisposable
     public readonly Store Store;
     public readonly Component Component;
     public readonly ComponentInstance Instance;
-    public readonly Wit.Tests.Test.Test_ Test;
+    public readonly Wit.Tests.Component.Test Test;
 
     public ComponentState()
     {
@@ -168,7 +164,7 @@ internal readonly struct ComponentState : IDisposable
         Component = Component.Compile(Engine, bytes);
 
         Instance = Store.GetComponentInstance(Component, Linker);
-        Test = new Wit.Tests.Test.Test_(Instance);
+        Test = new Wit.Tests.Component.Test(Instance);
     }
 
     public void Dispose()

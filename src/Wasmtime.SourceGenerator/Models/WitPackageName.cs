@@ -5,7 +5,7 @@ public readonly record struct WitPackageName(
     EquatableArray<string> Name
 )
 {
-    public EquatableArray<string> AllParts { get; } = Combine(Namespace, Name);
+    public EquatableArray<string> AllParts { get; } = EquatableArray.Combine(Namespace, Name);
 
     public string FullName { get; } = BuildName(Namespace, Name);
 
@@ -27,23 +27,12 @@ public readonly record struct WitPackageName(
 
     public WitPackageName AddLastName(string name)
     {
-        return new WitPackageName(
-            Namespace,
-            Combine(Name, new EquatableArray<string>(new[] { name }))
-        );
+        return new WitPackageName(Namespace, EquatableArray.Combine(Name, name));
     }
 
     public override string ToString()
     {
         return FullName;
-    }
-
-    private static EquatableArray<string> Combine(EquatableArray<string> equatableArray, EquatableArray<string> name)
-    {
-        var result = new string[equatableArray.Length + name.Length];
-        equatableArray.AsSpan().CopyTo(result);
-        name.AsSpan().CopyTo(result.AsSpan(equatableArray.Length));
-        return new EquatableArray<string>(result);
     }
 
     private static string BuildName(EquatableArray<string> namespaces, EquatableArray<string> names)
@@ -210,6 +199,8 @@ public readonly record struct WitPackageNameVersion(
     SemVer Version
 )
 {
+    public bool IsIdentifierOnly => Version.IsDefault && PackageName.AllParts.Length == 1;
+
     public (string, WitPackageNameVersion) WithoutLastNamePart()
     {
         var (lastPart, packageName) = PackageName.WithoutLastNamePart();
