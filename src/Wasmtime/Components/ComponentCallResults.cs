@@ -214,6 +214,20 @@ public readonly ref struct ComponentCallResults : IDisposable
     }
 
     /// <summary>
+    /// Gets the <see cref="RecordBuilder"/> result at the specified index.
+    /// </summary>
+    /// <param name="index">The zero-based index of the result.</param>
+    /// <returns>The <see cref="RecordBuilder"/> value at the specified index.</returns>
+    /// <exception cref="ArgumentOutOfRangeException">Thrown if the index is out of range.</exception>
+    /// <exception cref="InvalidOperationException">Thrown if the value at the index is not a <see cref="RecordBuilder"/>.</exception>
+    public RecordBuilder GetRecordBuilder(int index)
+    {
+        if (index < 0 || index >= Length) throw new ArgumentOutOfRangeException(nameof(index));
+        var val = _result.Array[index];
+        return val.kind == 14 ? new RecordBuilder(val.of.record) : throw new InvalidOperationException("Value is not a record");
+    }
+
+    /// <summary>
     /// Releases resources associated with this instance.
     /// </summary>
     public void Dispose()

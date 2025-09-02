@@ -7,7 +7,7 @@ public readonly struct EquatableDictionary<TKey, TValue> : IReadOnlyDictionary<T
 {
     private readonly IReadOnlyDictionary<TKey, TValue>? _dictionary;
 
-    public EquatableDictionary(IReadOnlyDictionary<TKey, TValue> dictionary)
+    public EquatableDictionary(IReadOnlyDictionary<TKey, TValue>? dictionary)
     {
         _dictionary = dictionary;
     }
@@ -100,5 +100,5 @@ public readonly struct EquatableDictionary<TKey, TValue> : IReadOnlyDictionary<T
         return !Equals(left, right);
     }
 
-    public static implicit operator EquatableDictionary<TKey, TValue>(Dictionary<TKey, TValue> dictionary) => new(dictionary);
+    public static implicit operator EquatableDictionary<TKey, TValue>(Dictionary<TKey, TValue>? dictionary) => new(dictionary);
 }

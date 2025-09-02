@@ -1,5 +1,7 @@
-﻿using Antlr4.Runtime;
+﻿using System.Collections.Immutable;
+using Antlr4.Runtime;
 using Antlr4.Runtime.Tree;
+using Microsoft.CodeAnalysis;
 using Wasmtime.SourceGenerator.Models;
 using Wasmtime.SourceGenerator.Visitors;
 
@@ -7,143 +9,223 @@ namespace Wasmtime.SourceGenerator;
 
 public class Wit
 {
-    public static WitFile Parse(string input)
+    public static WitDirectory Parse(string input)
     {
-        var inputStream = new AntlrInputStream(input);
-        var lexer = new WitLexer(inputStream);
+        return Parse(new WitRawDirectory(
+            Path: string.Empty,
+            Files: new[] { input }));
+    }
 
-        var commonTokenStream = new CommonTokenStream(lexer);
-        var parser = new WitParser(commonTokenStream)
+    public static WitDirectory Parse(WitRawDirectory directory)
+    {
+        var packages = new Dictionary<WitPackageName, Dictionary<SemVer, MutableWitPackageVersion>>();
+
+        WitPackageNameVersion? globalPackageName = null;
+        var files = new List<WitParser.FileContext>();
+
+        foreach (var content in directory.Files)
         {
-            ErrorHandler = new BailErrorStrategy(),
-        };
+            var inputStream = new AntlrInputStream(content);
+            var lexer = new WitLexer(inputStream);
 
-        var file = parser.file();
-        var packages = new Dictionary<WitPackageName, Dictionary<string, WitPackageVersion>>();
-
-        if (file.filePackage() is {} filePackage)
-        {
-            var result = Package(filePackage.packageName(), file.fileDefinition().SelectMany(x => x.children));
-
-            Add(result, packages);
-        }
-        else
-        {
-            foreach (var item in file.fileDefinition().SelectMany(x => x.children))
+            var commonTokenStream = new CommonTokenStream(lexer);
+            var parser = new WitParser(commonTokenStream)
             {
-                if (item is not WitParser.PackageContext packageContext)
+                ErrorHandler = new BailErrorStrategy(),
+            };
+
+            var file = parser.file();
+
+            if (file.filePackage()?.packageName() is { } packageName)
+            {
+                var name = WitPackageNameVersion.Parse(packageName);
+
+                if (globalPackageName is null)
                 {
-                    continue;
+                    globalPackageName = name;
                 }
-
-                var result = Package(
-                    packageContext.packageName(),
-                    packageContext.packageDefinition().SelectMany(x => x.children));
-
-                Add(result, packages);
+                else if (!globalPackageName.Equals(name))
+                {
+                    // Multiple different packages in the same directory is not allowed
+                    return new WitDirectory(
+                        Packages: default,
+                        Diagnostics: ImmutableArray.Create(
+                            ReportedDiagnostic.Create(
+                                DiagnosticMessages.MultipleFilePackagesInDirectory,
+                                Location.None, // TODO: Get real location from 'packageName'
+                                ImmutableArray.Create<object>(globalPackageName.ToString(), name.ToString(), directory.Path)
+                            )
+                        ));
+                }
             }
+
+            files.Add(file);
+        }
+
+        foreach (var file in files)
+        {
+            VisitPackage(
+                packages,
+                globalPackageName,
+                file.fileDefinition().SelectMany(x => x.children));
         }
 
         // Flatten versions with the same name into a single package
         var witPackages = packages.Select(x => new WitPackage(
                 x.Key,
-                new EquatableDictionary<string, WitPackageVersion>(x.Value)
+                x.Value.ToDictionary(v => v.Key, v => v.Value.ToImmutable())
             ))
             .ToDictionary(x => x.PackageName, x => x);
 
-        return new WitFile(witPackages);
+        return new WitDirectory(
+            witPackages,
+            Diagnostics: default
+        );
     }
 
     private static void Add(
-        (WitPackageName Name, WitPackageVersion Version) result,
-        Dictionary<WitPackageName, Dictionary<string, WitPackageVersion>> packages)
+        WitPackageNameVersion nameVersion,
+        MutableWitPackageVersion package,
+        Dictionary<WitPackageName, Dictionary<SemVer, MutableWitPackageVersion>> packages)
     {
-        if (!packages.TryGetValue(result.Name, out var versions))
+        var (name, version) = nameVersion;
+        var versionKey = version with { BuildMetadata = string.Empty };
+
+        if (!packages.TryGetValue(name, out var versions))
         {
-            versions = new Dictionary<string, WitPackageVersion>();
-            packages.Add(result.Name, versions);
+            versions = new Dictionary<SemVer, MutableWitPackageVersion>();
+            packages.Add(name, versions);
         }
 
-        if (versions.TryGetValue(result.Version.Version, out var existingVersion))
+        if (!versions.TryGetValue(versionKey, out var existingVersion))
         {
-            if (result.Version.Equals(existingVersion))
-            {
-                // Same version, same contents, ignore
-                return;
-            }
-
-            throw new InvalidOperationException($"Duplicate package version: {result.Name} {result.Version.Version}");
+            existingVersion = new MutableWitPackageVersion { SemVer = versionKey };
+            versions.Add(versionKey, existingVersion);
         }
 
-        versions.Add(result.Version.Version, result.Version);
+        existingVersion.Merge(package);
     }
 
-    private static (WitPackageName Name, WitPackageVersion Version) Package(WitParser.PackageNameContext nameContext, IEnumerable<IParseTree> items)
+    private static void VisitPackage(
+        Dictionary<WitPackageName, Dictionary<SemVer, MutableWitPackageVersion>> allPackages,
+        WitPackageNameVersion? name,
+        IEnumerable<IParseTree> items)
     {
-        var packages = new Dictionary<string, WitWorld>();
+        var version = new MutableWitPackageVersion();
 
         foreach (var item in items)
         {
+            if (item is WitParser.PackageContext packageContext)
+            {
+                VisitPackage(
+                    allPackages,
+                    WitPackageNameVersion.Parse(packageContext.packageName()),
+                    packageContext.packageDefinition().SelectMany(x => x.children));
+
+                continue;
+            }
+
+            if (item is WitParser.TypeDefContext typeDefContext)
+            {
+                var typeDef = TypeDef(name, typeDefContext);
+                version.Items.Add(typeDef);
+                continue;
+            }
+
             if (item is not WitParser.WorldContext worldContext)
             {
                 continue;
             }
 
-            var world = World(
-                worldContext.identifier().GetTextWithoutEscape(),
-                worldContext.worldDefinition().SelectMany(x => x.children));
+            if (name.HasValue)
+            {
+                var world = World(
+                    name.Value,
+                    worldContext.identifier().GetTextWithoutEscape(),
+                    worldContext.worldItem().Select(x => x.worldDefinition()).SelectMany(x => x.children));
 
-            packages.Add(world.Name, world);
+                version.Worlds.Add(world.Name, world);
+            }
         }
 
-        string version;
-
-        if (nameContext.semVersion() is not { } semver)
+        if (name is null)
         {
-            version = "0.0.0";
-        }
-        else
-        {
-            var core = semver.semVersionCore();
-            var major = core.integer(0).GetText().TrimStart('0');
-            var minor = core.integer(1)?.GetText().TrimStart('0') ?? "0";
-            var patch = core.integer(2)?.GetText().TrimStart('0') ?? "0";
-
-            version = $"{major}.{minor}.{patch}{semver.semversionExtra()?.GetText()}";
+            return;
         }
 
-        var packageVersion = new WitPackageVersion(version, packages);
-
-        var name = new WitPackageName(
-            nameContext.packageNamespace()?.identifier().Select(x => x.GetText()).ToArray() ?? Array.Empty<string>(),
-            nameContext.identifier().Select(x => x.GetText()).ToArray()
+        Add(
+            name.Value,
+            version,
+            allPackages
         );
-
-        return (name, packageVersion);
     }
 
-    private static WitWorld World(string name, IEnumerable<IParseTree> items)
+    private static WitWorld World(
+        WitPackageNameVersion packageName,
+        string worldName,
+        IEnumerable<IParseTree> items)
     {
-        var exports = new Dictionary<string, WitType>();
+        var worldItems = new List<WitTypeDef>();
+
+        var packagePrefix = packageName.AddLastName(worldName);
 
         foreach (var item in items)
         {
-            if (item is not WitParser.ExportContext exportContext)
+            if (item is WitParser.ExportContext exportContext)
             {
-                continue;
+                var name = exportContext.identifier().GetTextWithoutEscape();
+                var type = new WitTypeVisitor().Visit(exportContext.type());
+
+                worldItems.Add(new WitWorldExport(name, type));
             }
 
-            var type = new WitTypeVisitor().Visit(exportContext.type());
+            if (item is WitParser.IncludeContext includeContext)
+            {
+                if (includeContext.identifier() is { } identifier)
+                {
+                    var name = identifier.GetTextWithoutEscape();
+                    worldItems.Add(new WitWorldInclude(packageName, name));
+                }
+                else if (includeContext.packageName() is { } fullOtherPackageName)
+                {
+                    var (name, otherPackageName) = WitPackageNameVersion.Parse(fullOtherPackageName).WithoutLastNamePart();
+                    worldItems.Add(new WitWorldInclude(otherPackageName, name));
+                }
+            }
 
-            exports.Add(
-                exportContext.identifier().GetTextWithoutEscape(),
-                type
-            );
+            if (item is WitParser.TypeDefContext typeDefContext)
+            {
+                worldItems.Add(TypeDef(packagePrefix, typeDefContext));
+            }
         }
 
         return new WitWorld(
-            name,
-            exports
+            worldName,
+            worldItems.ToArray()
         );
+    }
+
+    private static WitTypeDef TypeDef(
+        WitPackageNameVersion? packageName,
+        WitParser.TypeDefContext context)
+    {
+        if (!packageName.HasValue)
+        {
+            throw new InvalidOperationException("Type definitions at the top level must be within a package.");
+        }
+
+        if (context.record() is { } recordContext)
+        {
+            return new WitRecord(
+                packageName.Value,
+                recordContext.identifier().GetTextWithoutEscape(),
+                recordContext.recordDefinition().Select(x => new WitField(
+                    x.identifier().GetTextWithoutEscape(),
+                    new WitTypeVisitor().Visit(x.type())
+                )).ToArray()
+            );
+        }
+
+        throw new NotSupportedException($"Type definition of kind '{context.GetType().Name}' is not supported.");
     }
 }

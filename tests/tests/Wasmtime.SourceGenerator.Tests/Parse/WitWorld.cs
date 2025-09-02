@@ -1,4 +1,5 @@
-﻿using Wasmtime.SourceGenerator.Models;
+﻿using System.Collections.Immutable;
+using Wasmtime.SourceGenerator.Models;
 
 namespace Wasmtime.SourceGenerator.Tests;
 
@@ -21,9 +22,10 @@ public class WitWorld
         var world = Assert.Single(version.Worlds.Values);
         Assert.Equal("MyWorld", world.Name);
 
-        var func = Assert.Single(world.Exports);
-        Assert.Equal("foo", func.Key);
-        Assert.Equal(WitTypeKind.Func, func.Value.Kind);
+        var item = Assert.Single(world.Items);
+        var export = Assert.IsType<WitWorldExport>(item);
+        Assert.Equal("foo", export.ExportName);
+        Assert.Equal(WitTypeKind.Func, export.Type.Kind);
     }
 
     [Fact]
@@ -49,13 +51,51 @@ public class WitWorld
         var world1 = version.Worlds["World1"];
         Assert.Equal("World1", world1.Name);
 
-        var func1 = Assert.Single(world1.Exports);
-        Assert.Equal("foo", func1.Key);
+        var item1 = Assert.Single(world1.Items);
+        var func1 = Assert.IsType<WitWorldExport>(item1);
+        Assert.Equal("foo", func1.ExportName);
 
         var world2 = version.Worlds["World2"];
         Assert.Equal("World2", world2.Name);
 
-        var func2 = Assert.Single(world2.Exports);
-        Assert.Equal("bar", func2.Key);
+        var item2 = Assert.Single(world2.Items);
+        var func2 = Assert.IsType<WitWorldExport>(item2);
+        Assert.Equal("bar", func2.ExportName);
+    }
+
+
+    [Fact]
+    public void World_Record()
+    {
+        var file = Wit.Parse(
+            """
+            package test;
+
+            world MyWorld {
+                record point {
+                    x: u32,
+                    y: u32,
+                }
+            };
+            """);
+
+        var package = Assert.Single(file.Packages.Values);
+        var version = Assert.Single(package.Versions.Values);
+        var world = Assert.Single(version.Worlds.Values);
+        Assert.Equal("MyWorld", world.Name);
+
+        var item = Assert.Single(world.Items);
+        var export = Assert.IsType<WitRecord>(item);
+        Assert.Equal("point", export.Name);
+
+        var expected = new WitRecordType(
+            export.Package,
+            "point",
+            ImmutableArray.Create(
+                new WitField("x", WitType.U32),
+                new WitField("y", WitType.U32)
+            ));
+
+        Assert.Equal(expected, export.Type);
     }
 }

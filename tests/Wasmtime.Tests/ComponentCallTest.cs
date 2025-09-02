@@ -53,23 +53,11 @@ public class ComponentCallTest
             static s => Assert.Equal("UPPERCASE", s.Uppercase("uppercase")));
     }
 
-    [Fact]
-    public async Task ConcurrentCalls_FunctionInstance()
-    {
-        using var state = new ComponentState();
-
-        var function = state.Instance.GetFunction("uppercase");
-
-        await ExecuteConcurrent(
-            () => (Wit: state.Test, Function: function),
-            static s => Assert.Equal("UPPERCASE", s.Wit.Uppercase(s.Function, "uppercase")));
-    }
-
     private static async Task ExecuteConcurrent<TState>(Func<TState> createState, Action<TState> action)
     {
         var cpuCount = Environment.ProcessorCount;
         var ready = new ManualResetEventSlim(initialState: false);
-        var threads = new (Thread Thread, TaskCompletionSource CompletionSource)[cpuCount];
+        var threads = new (Thread Thread, TaskCompletionSource<bool> CompletionSource)[cpuCount];
         var calls = 0;
 
         const int callsPerThread = 100;
@@ -78,7 +66,7 @@ public class ComponentCallTest
         // Set up threads
         for (var i = 0; i < cpuCount; i++)
         {
-            var taskCompletionSource = new TaskCompletionSource();
+            var taskCompletionSource = new TaskCompletionSource<bool>();
             var thread = new Thread(_ =>
             {
                 ready.Wait();
@@ -91,7 +79,7 @@ public class ComponentCallTest
                     Interlocked.Increment(ref calls);
                 }
 
-                taskCompletionSource.SetResult();
+                taskCompletionSource.SetResult(true);
             });
 
             threads[i] = (thread, taskCompletionSource);

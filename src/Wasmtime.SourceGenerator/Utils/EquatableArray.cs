@@ -217,7 +217,7 @@ public readonly struct EquatableArray<T> : IEquatable<EquatableArray<T>>, IEnume
 
     public T[] GetUnsafeArray()
     {
-        return array ?? Array.Empty<T>();
+        return array ?? [];
     }
 
     /// <summary>

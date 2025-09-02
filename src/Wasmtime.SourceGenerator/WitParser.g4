@@ -5,7 +5,7 @@ options {
 }
 
 file
-    : filePackage? fileDefinition*
+    : filePackage? (fileDefinition Semicolon?)*
     ;
 
 fileDefinition
@@ -28,7 +28,8 @@ type
     | StringType                                                                # StringTypeType
     | Char                                                                      # CharType
     | Bool                                                                      # BoolType
-    | Identifier                                                                # CustomType
+    | identifier                                                                # CustomType
+    | packageName                                                               # ExternalType
     | List OpenAngle type CloseAngle                                            # ListType
     | Option OpenAngle type CloseAngle                                          # OptionType
     | Result OpenAngle type Comma type CloseAngle                               # ResultType
@@ -38,6 +39,16 @@ type
     | Stream OpenAngle type CloseAngle                                          # StreamType
     | Tuple OpenAngle (type (Comma type)*)? CloseAngle                          # TupleType
     | Func OpenParen (funcParam (Comma funcParam)*)? CloseParen funcResult?     # FuncType
+    ;
+
+gate
+    : gateItem+
+    ;
+
+gateItem
+    : Unstable OpenParen Feature Equal identifier CloseParen                    # FeatureGateUnstable
+    | Since OpenParen Version Equal semVersion CloseParen                       # FeatureGateSince
+    | Deprecated OpenParen (Feature Equal identifier | Since Equal semVersion)? CloseParen # Feature
     ;
 
 funcParam
@@ -52,17 +63,13 @@ export
     : Export identifier (Colon type)? Semicolon
     ;
 
-externalImportName
-    : packageName Slash identifier
-    ;
-
 import_
-    : Import identifier Colon interface
-    | Import (externalImportName | identifier (Colon type)?) Semicolon
+    : Import identifier Colon interface Semicolon
+    | Import (packageName | identifier (Colon type)?) Semicolon
     ;
 
 include
-    : Include (externalImportName | identifier) with? Semicolon
+    : Include (packageName | identifier) with? Semicolon
     ;
 
 with
@@ -90,17 +97,22 @@ flags
     ;
 
 world
-    : World identifier OpenCurly worldDefinition* CloseCurly
+    : gate? World identifier OpenCurly worldItem* CloseCurly
     ;
 
 typeAlias
     : Type identifier Equal type Semicolon
     ;
 
+worldItem
+    : gate? worldDefinition
+    ;
+
 worldDefinition
     : export
     | import_
     | include
+    | typeDef
     ;
 
 interface
@@ -109,14 +121,41 @@ interface
 
 interfaceDefinition
     : identifier Colon type Semicolon
+    | typeDef
+    ;
+
+typeDef
+    : resource
+    | variant
     | record
-    | enum
     | flags
+    | enum
     | typeAlias
     ;
 
 package
     : Package packageName OpenCurly packageDefinition* CloseCurly
+    ;
+
+resource
+    : Resource identifier (Semicolon|OpenCurly (resourceMethod Semicolon)* CloseCurly)
+    ;
+
+static
+    : Static
+    ;
+
+resourceMethod
+    : gate? Constructor identifier OpenParen (funcParam (Comma funcParam)*)? CloseParen  # ResourceConstructor
+    | gate? identifier static? Colon type                                                # ResourceFunction
+    ;
+
+variant
+    : Variant identifier? OpenCurly (variantDefinition (Comma variantDefinition)*)? Comma? CloseCurly
+    ;
+
+variantDefinition
+    : identifier (OpenParen type CloseParen)?
     ;
 
 packageDefinition
@@ -154,6 +193,8 @@ semVersion
 
 identifier
     : Identifier
+    | Version
+    | Feature
     ;
 
 packageNamespace

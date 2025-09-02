@@ -103,6 +103,46 @@ public class ComponentCallTypeTest
         state.Test.SetFlag(true);
         Assert.True(state.Test.GetFlag());
     }
+
+    [Fact]
+    public void Record()
+    {
+        using var state = new ComponentState();
+
+        var position = new Wit.Tests.Test.Test_.Point
+        {
+            X = 10,
+            Y = 20
+        };
+
+        var result = state.Test.AddPoint(position, position);
+
+        Assert.Equal(20, result.X);
+        Assert.Equal(40, result.Y);
+    }
+
+    [Fact]
+    public void Record_Nested()
+    {
+        using var state = new ComponentState();
+
+        state.Test.RegisterEntity(new Wit.Tests.Test.Test_.Entity
+        {
+            Id = 1,
+            Name = "Entity",
+            Position = new Wit.Tests.Test.Test_.Point
+            {
+                X = 10,
+                Y = 20
+            }
+        });
+
+        var entity = state.Test.GetEntity(1);
+        Assert.Equal(1, entity.Id);
+        Assert.Equal("Entity", entity.Name);
+        Assert.Equal(10, entity.Position.X);
+        Assert.Equal(20, entity.Position.Y);
+    }
 }
 
 

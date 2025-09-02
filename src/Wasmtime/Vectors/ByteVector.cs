@@ -1,11 +1,12 @@
 ﻿using System;
+using System.Runtime.InteropServices;
 using System.Text;
 using Wasmtime.Interop;
 
 namespace Wasmtime;
 
 [System.Diagnostics.DebuggerDisplay("{DebuggerDisplay,nq}")]
-public readonly unsafe struct ByteVector : IDisposable
+public readonly unsafe struct ByteVector : IDisposable, IEquatable<ByteVector>
 {
     private readonly wasm_byte_vec_t _vector;
 
@@ -84,9 +85,7 @@ public readonly unsafe struct ByteVector : IDisposable
         }
     }
 
-    internal wasm_byte_vec_t Handle => _vector;
-
-    public bool HasValue => _vector.data != null;
+    internal wasm_byte_vec_t Value => _vector;
 
     /// <summary>
     /// Gets the size of the vector.
@@ -119,5 +118,60 @@ public readonly unsafe struct ByteVector : IDisposable
                 wasm_byte_vec_delete(vec);
             }
         }
+    }
+
+    /// <inheritdoc />
+    public bool Equals(ByteVector other)
+    {
+        return Span.SequenceEqual(other.Span);
+    }
+
+    /// <inheritdoc />
+    public override bool Equals(object? obj)
+    {
+        return obj is ByteVector other && Equals(other);
+    }
+
+    /// <inheritdoc />
+    public override int GetHashCode()
+    {
+#if NET
+        var hash = new HashCode();
+        hash.AddBytes(Span);
+        return hash.ToHashCode();
+#else
+        var hash = new HashCode();
+        var span = Span;
+
+        // Simple unrolling to hash 8 bytes at a time to improve performance a little bit.
+        if (span.Length > 8)
+        {
+            var remaining = span.Length % 8;
+
+            foreach (var value in MemoryMarshal.Cast<byte, long>(span.Slice(0, span.Length - remaining)))
+            {
+                hash.Add(value);
+            }
+
+            span = span.Slice(span.Length - remaining);
+        }
+
+        foreach (var t in span)
+        {
+            hash.Add(t);
+        }
+
+        return hash.ToHashCode();
+#endif
+    }
+
+    public static bool operator ==(ByteVector left, ByteVector right)
+    {
+        return left.Equals(right);
+    }
+
+    public static bool operator !=(ByteVector left, ByteVector right)
+    {
+        return !left.Equals(right);
     }
 }

@@ -87,11 +87,13 @@ public class WitFunc
                 export test: {{input}};
             }
             """);
+
         var package = Assert.Single(file.Packages.Values);
         var version = Assert.Single(package.Versions.Values);
         var world = Assert.Single(version.Worlds.Values);
-        var export = Assert.Single(world.Exports.Values);
-        var func = Assert.IsType<WitFuncType>(export);
-        return func;
+        var item = Assert.Single(world.Items);
+        var export = Assert.IsType<WitWorldExport>(item);
+
+        return Assert.IsType<WitFuncType>(export.Type);
     }
 }

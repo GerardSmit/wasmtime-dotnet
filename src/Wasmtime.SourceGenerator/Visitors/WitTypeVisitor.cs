@@ -19,7 +19,9 @@ public class WitTypeVisitor : WitParserBaseVisitor<WitType>
 
     public override WitType VisitCustomType(WitParser.CustomTypeContext context)
     {
-        throw new NotImplementedException();
+        return new WitCustomType(
+            context.identifier().GetTextWithoutEscape()
+        );
     }
 
     public override WitType VisitBoolType(WitParser.BoolTypeContext context)

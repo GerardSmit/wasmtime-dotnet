@@ -1,6 +1,17 @@
 ﻿package tests:test@0.1.0;
 
 world test {
+    record point {
+        x: s32,
+        y: s32,
+    }
+
+    record entity {
+        id: s32,
+        name: string,
+        position: point,
+    }
+
     export add-u8: func(x: u8, y: u8) -> u8;
     export add-s8: func(x: s8, y: s8) -> s8;
     export add-u16: func(x: u16, y: u16) -> u16;
@@ -11,6 +22,10 @@ world test {
     export add-s64: func(x: s64, y: s64) -> s64;
     export add-f32: func(x: f32, y: f32) -> f32;
     export add-f64: func(x: f64, y: f64) -> f64;
+    export add-point: func(p1: point, p2: point) -> point;
+
+    export register-entity: func(e: entity);
+    export get-entity: func(id: s32) -> entity;
 
     export uppercase: func(s: string) -> string;
 

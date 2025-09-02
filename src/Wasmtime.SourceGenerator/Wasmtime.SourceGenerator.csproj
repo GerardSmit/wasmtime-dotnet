@@ -2,7 +2,7 @@
 
     <PropertyGroup>
         <TargetFramework>netstandard2.0</TargetFramework>
-        <LangVersion>10</LangVersion>
+        <LangVersion>12</LangVersion>
         <IncludeBuildOutput>false</IncludeBuildOutput>
         <Nullable>enable</Nullable>
         <ImplicitUsings>enable</ImplicitUsings>
@@ -27,6 +27,10 @@
         <Antlr4 Include="WitParser.g4">
             <CustomToolNamespace>Wasmtime.SourceGenerator</CustomToolNamespace>
         </Antlr4>
+    </ItemGroup>
+
+    <ItemGroup>
+        <Compile Include="../Wasmtime/HashCode.cs" Link="Utils/HashCode.cs" />
     </ItemGroup>
 
     <ItemGroup>

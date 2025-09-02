@@ -2,6 +2,8 @@
 
 public sealed class TestWorldImpl : ITestWorld
 {
+    public static Dictionary<long, ITestWorld.Entity> Entities { get; } = new();
+
     public static byte AddU8(byte x, byte y) => (byte)(x + y);
     public static sbyte AddS8(sbyte x, sbyte y) => (sbyte)(x + y);
 
@@ -17,6 +19,11 @@ public sealed class TestWorldImpl : ITestWorld
     public static double AddF64(double x, double y) => x + y;
 
     public static float AddF32(float x, float y) => x + y;
+
+    public static ITestWorld.Point AddPoint(ITestWorld.Point p1, ITestWorld.Point p2) => new(p1.x + p2.x, p1.y + p2.y);
+
+    public static void RegisterEntity(ITestWorld.Entity e) => Entities[e.id] = e;
+    public static ITestWorld.Entity GetEntity(int id) => Entities.TryGetValue(id, out var entity) ? entity : new ITestWorld.Entity(-1, "", new ITestWorld.Point(0, 0));
 
     public static string Uppercase(string input)
     {

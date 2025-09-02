@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Runtime.CompilerServices;
 using System.Threading;
@@ -38,7 +37,35 @@ public unsafe class ComponentInstance
 
         try
         {
-            var results = CallInternal(GetFunction(name), resultCount, values);
+            fixed (ComponentValue* valuesPtr = values)
+            {
+                var results = CallInternal(GetFunction(name), resultCount, valuesPtr, values.Length);
+
+                return new ComponentCallResults(_semaphore, results);
+            }
+        }
+        catch
+        {
+            _semaphore.Release();
+            throw;
+        }
+    }
+
+    /// <summary>
+    /// Calls a function in the component instance with synchronization.
+    /// </summary>
+    /// <param name="name">Name of the function to call.</param>
+    /// <param name="resultCount">Number of results to expect from the call.</param>
+    /// <param name="values">Arguments to pass to the function.</param>
+    /// <param name="valuesLength">Length of the arguments array.</param>
+    /// <returns>The results of the function call.</returns>
+    public ComponentCallResults Call(string name, int resultCount, ComponentValue* values, int valuesLength)
+    {
+        _semaphore.Wait(TimeSpan.FromSeconds(5));
+
+        try
+        {
+            var results = CallInternal(GetFunction(name), resultCount, values, valuesLength);
 
             return new ComponentCallResults(_semaphore, results);
         }
@@ -63,6 +90,20 @@ public unsafe class ComponentInstance
     }
 
     /// <summary>
+    /// Calls a function in the component instance without any synchronization.
+    /// The caller is responsible for ensuring that calls to the current component instance are not made concurrently.
+    /// </summary>
+    /// <param name="name">Name of the function to call.</param>
+    /// <param name="resultCount">Number of results to expect from the call.</param>
+    /// <param name="values">Arguments to pass to the function.</param>
+    /// <param name="valuesLength">Length of the arguments array.</param>
+    /// <returns>The results of the function call.</returns>
+    public ComponentCallResults CallUnsafe(string name, int resultCount, ComponentValue* values, int valuesLength)
+    {
+        return CallUnsafe(GetFunction(name), resultCount, values, valuesLength);
+    }
+
+    /// <summary>
     /// Calls a function in the component instance with synchronization.
     /// </summary>
     /// <param name="function">Instance of <see cref="GetFunction"/> to call.</param>
@@ -75,7 +116,35 @@ public unsafe class ComponentInstance
 
         try
         {
-            var results = CallInternal(function, resultCount, values);
+            fixed (ComponentValue* valuesPtr = values)
+            {
+                var results = CallInternal(function, resultCount, valuesPtr, values.Length);
+
+                return new ComponentCallResults(_semaphore, results);
+            }
+        }
+        catch
+        {
+            _semaphore.Release();
+            throw;
+        }
+    }
+
+    /// <summary>
+    /// Calls a function in the component instance with synchronization.
+    /// </summary>
+    /// <param name="function">Instance of <see cref="GetFunction"/> to call.</param>
+    /// <param name="resultCount">Number of results to expect from the call.</param>
+    /// <param name="values">Arguments to pass to the function.</param>
+    /// <param name="valuesLength">Length of the arguments array.</param>
+    /// <returns>The results of the function call.</returns>
+    public ComponentCallResults Call(ComponentInstanceFunction function, int resultCount, ComponentValue* values, int valuesLength)
+    {
+        _semaphore.Wait(TimeSpan.FromSeconds(5));
+
+        try
+        {
+            var results = CallInternal(function, resultCount, values, valuesLength);
 
             return new ComponentCallResults(_semaphore, results);
         }
@@ -96,8 +165,26 @@ public unsafe class ComponentInstance
     /// <returns>The results of the function call.</returns>
     public ComponentCallResults CallUnsafe(ComponentInstanceFunction function, int resultCount, ReadOnlySpan<ComponentValue> values)
     {
-        var results = CallInternal(function, resultCount, values);
-        return new ComponentCallResults(null,results );
+        fixed (ComponentValue* valuesPtr = values)
+        {
+            var results = CallInternal(function, resultCount, valuesPtr, values.Length);
+            return new ComponentCallResults(null, results);
+        }
+    }
+
+    /// <summary>
+    /// Calls a function in the component instance without any synchronization.
+    /// The caller is responsible for ensuring that calls to the current component instance are not made concurrently.
+    /// </summary>
+    /// <param name="function">Instance of <see cref="GetFunction"/> to call.</param>
+    /// <param name="resultCount">Number of results to expect from the call.</param>
+    /// <param name="values">Arguments to pass to the function.</param>
+    /// <param name="valuesLength">Length of the arguments array.</param>
+    /// <returns>The results of the function call.</returns>
+    public ComponentCallResults CallUnsafe(ComponentInstanceFunction function, int resultCount, ComponentValue* values, int valuesLength)
+    {
+        var results = CallInternal(function, resultCount, values, valuesLength);
+        return new ComponentCallResults(null, results);
     }
 
     /// <summary>
@@ -149,7 +236,7 @@ public unsafe class ComponentInstance
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private ComponentCallResultsInternal CallInternal(ComponentInstanceFunction function, int resultCount, ReadOnlySpan<ComponentValue> values)
+    private ComponentCallResultsInternal CallInternal(ComponentInstanceFunction function, int resultCount, ComponentValue* values, int valuesLength)
     {
 #if NET
         ObjectDisposedException.ThrowIf(_store.Disposed, nameof(Store));
@@ -160,14 +247,13 @@ public unsafe class ComponentInstance
         var results = ComponentCallResultsInternal.ThreadInstance;
         results.Initialize(resultCount, function.Function, _store.Context);
 
-        fixed (ComponentValue* argsPtr = values)
         fixed (wasmtime_component_val* resultsPtr = results.Array)
         {
             var error = wasmtime_component_func_call(
                 &function.Function,
                 _store.Context,
-                (wasmtime_component_val*)argsPtr,
-                (nuint)values.Length,
+                (wasmtime_component_val*)values,
+                (nuint)valuesLength,
                 resultsPtr,
                 (nuint)results.Length
             );

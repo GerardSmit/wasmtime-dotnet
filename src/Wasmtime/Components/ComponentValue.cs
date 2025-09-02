@@ -1,4 +1,6 @@
 ﻿using System;
+using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
 using Wasmtime.Interop;
 
 namespace Wasmtime;
@@ -12,6 +14,8 @@ public readonly struct ComponentValue : IDisposable
     // This struct is a direct mapping to the native wasmtime_component_val structure.
     // Adding fields will change the memory layout and break interop.
     private readonly wasmtime_component_val _val;
+
+    internal wasmtime_component_val Value => _val;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="ComponentValue"/> struct with an existing native handle.
@@ -149,7 +153,17 @@ public readonly struct ComponentValue : IDisposable
     public ComponentValue(string value)
     {
         _val.kind = 12;
-        _val.of.@string = new ByteVector(value).Handle;
+        _val.of.@string = new ByteVector(value).Value;
+    }
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="ComponentValue"/> struct with a <see cref="RecordBuilder"/> value.
+    /// </summary>
+    /// <param name="value">The <see cref="RecordBuilder"/> value.</param>
+    public ComponentValue(RecordBuilder value)
+    {
+        _val.kind = 14;
+        _val.of.record = value.Value;
     }
 
     /// <summary>
@@ -242,6 +256,97 @@ public readonly struct ComponentValue : IDisposable
     /// <param name="value">The <see cref="string"/> value.</param>
     /// <returns>A <see cref="ComponentValue"/> representing the string.</returns>
     public static ComponentValue CreateString(string value) => new(value);
+
+    /// <summary>
+    /// Creates a <see cref="ComponentValue"/> from a <see cref="ReadOnlySpan{byte}"/> value.
+    /// </summary>
+    /// <param name="value">The <see cref="ReadOnlySpan{byte}"/> value.</param>
+    /// <returns>A <see cref="ComponentValue"/> representing the memory.</returns>
+    public static ComponentValue CreateRecord(RecordBuilder value) => new(value);
+
+    public bool ToBoolean()
+    {
+        if (_val.kind != 0) throw new InvalidOperationException($"Cannot convert ComponentValue of kind {_val.kind} to Boolean.");
+        return _val.of.boolean != 0;
+    }
+
+    public sbyte ToSByte()
+    {
+        if (_val.kind != 1) throw new InvalidOperationException($"Cannot convert ComponentValue of kind {_val.kind} to SByte.");
+        return _val.of.s8;
+    }
+
+    public byte ToByte()
+    {
+        if (_val.kind != 2) throw new InvalidOperationException($"Cannot convert ComponentValue of kind {_val.kind} to Byte.");
+        return _val.of.u8;
+    }
+
+    public short ToInt16()
+    {
+        if (_val.kind != 3) throw new InvalidOperationException($"Cannot convert ComponentValue of kind {_val.kind} to Int16.");
+        return _val.of.s16;
+    }
+
+    public ushort ToUInt16()
+    {
+        if (_val.kind != 4) throw new InvalidOperationException($"Cannot convert ComponentValue of kind {_val.kind} to UInt16.");
+        return _val.of.u16;
+    }
+
+    public int ToInt32()
+    {
+        if (_val.kind != 5) throw new InvalidOperationException($"Cannot convert ComponentValue of kind {_val.kind} to Int32.");
+        return _val.of.s32;
+    }
+
+    public uint ToUInt32()
+    {
+        if (_val.kind != 6) throw new InvalidOperationException($"Cannot convert ComponentValue of kind {_val.kind} to UInt32.");
+        return _val.of.u32;
+    }
+
+    public long ToInt64()
+    {
+        if (_val.kind != 7) throw new InvalidOperationException($"Cannot convert ComponentValue of kind {_val.kind} to Int64.");
+        return _val.of.s64;
+    }
+
+    public ulong ToUInt64()
+    {
+        if (_val.kind != 8) throw new InvalidOperationException($"Cannot convert ComponentValue of kind {_val.kind} to UInt64.");
+        return _val.of.u64;
+    }
+
+    public float ToFloat()
+    {
+        if (_val.kind != 9) throw new InvalidOperationException($"Cannot convert ComponentValue of kind {_val.kind} to Float.");
+        return _val.of.f32;
+    }
+
+    public double ToDouble()
+    {
+        if (_val.kind != 10) throw new InvalidOperationException($"Cannot convert ComponentValue of kind {_val.kind} to Double.");
+        return _val.of.f64;
+    }
+
+    public char ToChar()
+    {
+        if (_val.kind != 11) throw new InvalidOperationException($"Cannot convert ComponentValue of kind {_val.kind} to Char.");
+        return (char)_val.of.character;
+    }
+
+    public string ToStringValue()
+    {
+        if (_val.kind != 12) throw new InvalidOperationException($"Cannot convert ComponentValue of kind {_val.kind} to String.");
+        return new ByteVector(_val.of.@string).GetString();
+    }
+
+    public RecordBuilder ToRecordBuilder()
+    {
+        if (_val.kind != 14) throw new InvalidOperationException($"Cannot convert ComponentValue of kind {_val.kind} to Record.");
+        return new RecordBuilder(_val.of.record);
+    }
 
     /// <inheritdoc />
     public void Dispose()

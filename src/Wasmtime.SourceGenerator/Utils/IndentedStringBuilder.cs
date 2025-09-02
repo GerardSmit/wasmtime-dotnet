@@ -20,7 +20,10 @@ public class IndentedStringBuilder
     /// </summary>
     /// <value>The current indent level.</value>
     public virtual int IndentCount
-        => _indent;
+    {
+        get => _indent;
+        set => _indent = value < 0 ? 0 : value;
+    }
 
     /// <summary>
     ///     The current length of the built string.
