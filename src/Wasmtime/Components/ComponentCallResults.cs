@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Threading;
+using Wasmtime.Interop;
 
 namespace Wasmtime;
 
@@ -11,26 +12,39 @@ namespace Wasmtime;
 /// This struct wraps around <see cref="ComponentCallResultsInternal"/> to ensure that the instance
 /// is not used in async (the instance is thread-static).
 /// </remarks>
-public readonly ref struct ComponentCallResults : IDisposable
+public readonly unsafe ref struct ComponentCallResults : IDisposable
 {
+    private readonly wasmtime_component_val* _val;
     private readonly SemaphoreSlim? _semaphore;
-    private readonly ComponentCallResultsInternal _result;
+    private readonly ComponentCallResultsInternal? _result;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="ComponentCallResults"/> struct.
     /// </summary>
-    /// <param name="semaphore"></param>
     /// <param name="result">The internal result structure to wrap.</param>
+    /// <param name="semaphore">The semaphore to release when disposed.</param>
     internal ComponentCallResults(SemaphoreSlim? semaphore, ComponentCallResultsInternal result)
     {
         _semaphore = semaphore;
         _result = result;
+        Length = result.Length;
+    }
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="ComponentCallResults"/> struct.
+    /// </summary>
+    /// <param name="val">The pointer to the array of result values.</param>
+    /// <param name="length">The number of result values.</param>
+    internal ComponentCallResults(wasmtime_component_val* val, int length)
+    {
+        _val = val;
+        Length = length;
     }
 
     /// <summary>
     /// Gets the number of results returned by the component call.
     /// </summary>
-    public int Length => _result.Length;
+    public int Length { get; }
 
     /// <summary>
     /// Gets the <see cref="bool"/> result at the specified index.
@@ -42,7 +56,7 @@ public readonly ref struct ComponentCallResults : IDisposable
     public bool GetBoolean(int index)
     {
         if (index < 0 || index >= Length) throw new ArgumentOutOfRangeException(nameof(index));
-        var val = _result.Array[index];
+        var val = _result?.Array[index] ?? _val[index];
         return val.kind == 0 ? (val.of.boolean != 0) : throw new InvalidOperationException("Value is not a boolean");
     }
 
@@ -56,7 +70,7 @@ public readonly ref struct ComponentCallResults : IDisposable
     public sbyte GetSByte(int index)
     {
         if (index < 0 || index >= Length) throw new ArgumentOutOfRangeException(nameof(index));
-        var val = _result.Array[index];
+        var val = _result?.Array[index] ?? _val[index];
         return val.kind == 1 ? val.of.s8 : throw new InvalidOperationException("Value is not an sbyte");
     }
 
@@ -70,7 +84,7 @@ public readonly ref struct ComponentCallResults : IDisposable
     public byte GetByte(int index)
     {
         if (index < 0 || index >= Length) throw new ArgumentOutOfRangeException(nameof(index));
-        var val = _result.Array[index];
+        var val = _result?.Array[index] ?? _val[index];
         return val.kind == 2 ? val.of.u8 : throw new InvalidOperationException("Value is not a byte");
     }
 
@@ -84,7 +98,7 @@ public readonly ref struct ComponentCallResults : IDisposable
     public short GetInt16(int index)
     {
         if (index < 0 || index >= Length) throw new ArgumentOutOfRangeException(nameof(index));
-        var val = _result.Array[index];
+        var val = _result?.Array[index] ?? _val[index];
         return val.kind == 3 ? val.of.s16 : throw new InvalidOperationException("Value is not an int16");
     }
 
@@ -98,7 +112,7 @@ public readonly ref struct ComponentCallResults : IDisposable
     public ushort GetUInt16(int index)
     {
         if (index < 0 || index >= Length) throw new ArgumentOutOfRangeException(nameof(index));
-        var val = _result.Array[index];
+        var val = _result?.Array[index] ?? _val[index];
         return val.kind == 4 ? val.of.u16 : throw new InvalidOperationException("Value is not a uint16");
     }
 
@@ -112,7 +126,7 @@ public readonly ref struct ComponentCallResults : IDisposable
     public int GetInt32(int index)
     {
         if (index < 0 || index >= Length) throw new ArgumentOutOfRangeException(nameof(index));
-        var val = _result.Array[index];
+        var val = _result?.Array[index] ?? _val[index];
         return val.kind == 5 ? val.of.s32 : throw new InvalidOperationException("Value is not an int32");
     }
 
@@ -125,7 +139,7 @@ public readonly ref struct ComponentCallResults : IDisposable
     /// <exception cref="InvalidOperationException">Thrown if the value at the index is not a <see cref="uint"/>.</exception>
     public uint GetUInt32(int index)
     {
-        var val = _result.Array[index];
+        var val = _result?.Array[index] ?? _val[index];
         return val.kind == 6 ? val.of.u32 : throw new InvalidOperationException("Value is not a uint32");
     }
 
@@ -139,7 +153,7 @@ public readonly ref struct ComponentCallResults : IDisposable
     public long GetInt64(int index)
     {
         if (index < 0 || index >= Length) throw new ArgumentOutOfRangeException(nameof(index));
-        var val = _result.Array[index];
+        var val = _result?.Array[index] ?? _val[index];
         return val.kind == 7 ? val.of.s64 : throw new InvalidOperationException("Value is not an int64");
     }
 
@@ -153,7 +167,7 @@ public readonly ref struct ComponentCallResults : IDisposable
     public ulong GetUInt64(int index)
     {
         if (index < 0 || index >= Length) throw new ArgumentOutOfRangeException(nameof(index));
-        var val = _result.Array[index];
+        var val = _result?.Array[index] ?? _val[index];
         return val.kind == 8 ? val.of.u64 : throw new InvalidOperationException("Value is not a uint64");
     }
 
@@ -167,7 +181,7 @@ public readonly ref struct ComponentCallResults : IDisposable
     public float GetFloat(int index)
     {
         if (index < 0 || index >= Length) throw new ArgumentOutOfRangeException(nameof(index));
-        var val = _result.Array[index];
+        var val = _result?.Array[index] ?? _val[index];
         return val.kind == 9 ? val.of.f32 : throw new InvalidOperationException("Value is not a float");
     }
 
@@ -181,7 +195,7 @@ public readonly ref struct ComponentCallResults : IDisposable
     public double GetDouble(int index)
     {
         if (index < 0 || index >= Length) throw new ArgumentOutOfRangeException(nameof(index));
-        var val = _result.Array[index];
+        var val = _result?.Array[index] ?? _val[index];
         return val.kind == 10 ? val.of.f64 : throw new InvalidOperationException("Value is not a double");
     }
 
@@ -195,7 +209,7 @@ public readonly ref struct ComponentCallResults : IDisposable
     public char GetChar(int index)
     {
         if (index < 0 || index >= Length) throw new ArgumentOutOfRangeException(nameof(index));
-        var val = _result.Array[index];
+        var val = _result?.Array[index] ?? _val[index];
         return val.kind == 11 ? (char)val.of.character : throw new InvalidOperationException("Value is not a char");
     }
 
@@ -209,7 +223,7 @@ public readonly ref struct ComponentCallResults : IDisposable
     public unsafe string GetString(int index)
     {
         if (index < 0 || index >= Length) throw new ArgumentOutOfRangeException(nameof(index));
-        var val = _result.Array[index];
+        var val = _result?.Array[index] ?? _val[index];
         return val.kind == 12 ? new ByteVector(&val.of.@string).GetString() : throw new InvalidOperationException("Value is not a string");
     }
 
@@ -223,7 +237,7 @@ public readonly ref struct ComponentCallResults : IDisposable
     public RecordBuilder GetRecordBuilder(int index)
     {
         if (index < 0 || index >= Length) throw new ArgumentOutOfRangeException(nameof(index));
-        var val = _result.Array[index];
+        var val = _result?.Array[index] ?? _val[index];
         return val.kind == 14 ? new RecordBuilder(val.of.record) : throw new InvalidOperationException("Value is not a record");
     }
 
@@ -232,7 +246,7 @@ public readonly ref struct ComponentCallResults : IDisposable
     /// </summary>
     public void Dispose()
     {
-        _result.Dispose();
+        _result?.Dispose();
         _semaphore?.Release();
     }
 }

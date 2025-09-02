@@ -234,13 +234,14 @@ public class ComponentSourceGenerator() : IncrementalGenerator("ComponentSourceG
 
         string? lastPart = null;
 
-        nameBuilder.Append("Wit.");
+        nameBuilder.Append("Wit");
 
         foreach (var part in package.Key.AllParts)
         {
             var name = GetName(part);
 
             sb.AppendLine($"public static partial class {name}");
+            nameBuilder.Append('.');
             nameBuilder.Append(name);
 
             if (part == lastPart)
@@ -255,7 +256,6 @@ public class ComponentSourceGenerator() : IncrementalGenerator("ComponentSourceG
                 lastPart = part;
             }
 
-            nameBuilder.Append('.');
             sb.AppendLine("{");
             sb.IncrementIndent();
         }
@@ -266,57 +266,125 @@ public class ComponentSourceGenerator() : IncrementalGenerator("ComponentSourceG
         {
             var className = GetName(world.Value.Name);
 
-            if (world.Value.Name == lastPart)
-            {
-                className += "_";
-            }
-
-            nameBuilder.Append(className);
-            sb.Append("public partial class ").AppendLine(className);
-
-            sb.AppendLine("{");
-            sb.IncrementIndent();
-
-            // Fields
-            sb.AppendLine("private readonly global::Wasmtime.ComponentInstance _instance;");
-            sb.AppendLine();
-
-            // Constructor
-            sb.Append("public ").Append(className).AppendLine("(global::Wasmtime.ComponentInstance instance)");
-            sb.AppendLine("{");
-            sb.IncrementIndent();
-            sb.AppendLine("_instance = instance;");
-            sb.DecrementIndent();
-            sb.AppendLine("}");
-            sb.AppendLine();
-
-            // Exports
-            foreach (var export in world.Value.Definitions.Items.OfType<WitWorldExport>())
-            {
-                if (export.Type.Kind != WitTypeKind.Func || export.Type is not WitFuncType funcType)
-                {
-                    sb.AppendLine($"// Unsupported export '{export.ExportName}' of type '{export.Type.Kind}'");
-                    continue;
-                }
-
-                try
-                {
-                    WriteFunction(sb, funcType, export, solutionResolver);
-                }
-                catch (Exception e)
-                {
-                    sb.AppendLine($"// Failed to generate function '{export.ExportName}': {e.Message}");
-                }
-            }
-
             if (world.Value.Definitions.Items.Length > 0)
             {
+                sb.Append("public partial class ").Append(className);
+
+                sb.AppendLine("{");
+                sb.IncrementIndent();
+
                 WriteItems(sb, world.Value.Definitions.Items, solutionResolver);
+
+                sb.DecrementIndent();
+                sb.AppendLine("}");
+                sb.AppendLine();
             }
 
-            sb.DecrementIndent();
-            sb.AppendLine("}");
-            sb.AppendLine();
+            if (world.Value.Definitions.Items.OfType<WitWorldExport>().Any())
+            {
+                sb.Append("public partial class ").Append(className).AppendLine("Exports");
+
+                sb.AppendLine("{");
+                sb.IncrementIndent();
+
+                // Fields
+                sb.AppendLine("private readonly global::Wasmtime.ComponentInstance _instance;");
+                sb.AppendLine();
+
+                // Constructor
+                sb.Append("public ").Append(className).AppendLine("Exports(global::Wasmtime.ComponentInstance instance)");
+                sb.AppendLine("{");
+                sb.IncrementIndent();
+                sb.AppendLine("_instance = instance;");
+                sb.DecrementIndent();
+                sb.AppendLine("}");
+                sb.AppendLine();
+
+                // Exports
+                foreach (var export in world.Value.Definitions.Items.OfType<WitWorldExport>())
+                {
+                    if (export.Type.Kind != WitTypeKind.Func || export.Type is not WitFuncType funcType)
+                    {
+                        sb.AppendLine($"// Unsupported export '{export.ExportName}' of type '{export.Type.Kind}'");
+                        continue;
+                    }
+
+                    try
+                    {
+                        WriteExport(sb, funcType, export, solutionResolver);
+                    }
+                    catch (Exception e)
+                    {
+                        sb.AppendLine($"// Failed to generate function '{export.ExportName}': {e.Message}");
+                    }
+                }
+
+                sb.DecrementIndent();
+                sb.AppendLine("}");
+                sb.AppendLine();
+            }
+
+            if (world.Value.Definitions.Items.OfType<WitWorldImport>().Any())
+            {
+                sb.Append("public abstract partial class ").Append(className).AppendLine("Imports : global::Wasmtime.IComponentImports");
+
+                sb.AppendLine("{");
+                sb.IncrementIndent();
+
+                var imports = new List<WitWorldImport>();
+
+                // Imports
+                foreach (var import in world.Value.Definitions.Items.OfType<WitWorldImport>())
+                {
+                    if (import.Type.Kind != WitTypeKind.Func || import.Type is not WitFuncType funcType)
+                    {
+                        sb.AppendLine($"// Unsupported export '{import.ImportName}' of type '{import.Type.Kind}'");
+                        continue;
+                    }
+
+                    try
+                    {
+                        WriteImport(sb, funcType, import, solutionResolver);
+                        imports.Add(import);
+                    }
+                    catch (Exception e)
+                    {
+                        sb.AppendLine($"// Failed to generate function '{import.ImportName}': {e.Message}");
+                    }
+                }
+
+                sb.AppendLine();
+
+                // Register method
+                sb.AppendLine("unsafe void global::Wasmtime.IComponentImports.Register(global::Wasmtime.Linker linker)");
+                sb.AppendLine("{");
+                sb.IncrementIndent();
+                foreach (var import in imports)
+                {
+                    var importName = GetName(import.ImportName);
+                    sb.Append("linker.DefineFunction(\"").Append(import.ImportName).Append("\", ").Append("Invoke").Append(importName).AppendLine(", this);");
+                }
+
+                sb.DecrementIndent();
+                sb.AppendLine("}");
+                sb.AppendLine();
+
+                // Import invokers
+                foreach (var import in imports)
+                {
+                    try
+                    {
+                        WriteImportRegistration(sb, className, (WitFuncType)import.Type, import, solutionResolver);
+                    }
+                    catch (Exception e)
+                    {
+                        sb.AppendLine($"// Failed to generate function '{import.ImportName}': {e.Message}");
+                    }
+                }
+
+                sb.DecrementIndent();
+                sb.AppendLine("}");
+            }
         }
 
         WriteItems(sb, version.Definitions.Items, solutionResolver);
@@ -345,7 +413,7 @@ public class ComponentSourceGenerator() : IncrementalGenerator("ComponentSourceG
     {
         foreach (var item in valueItems)
         {
-            if (item is WitWorldExport or WitUse)
+            if (item is WitWorldExport or WitUse or WitWorldImport)
             {
                 // Ignore world exports: they are handled in 'GenerateWitAccessor'.
                 continue;
@@ -439,7 +507,7 @@ public class ComponentSourceGenerator() : IncrementalGenerator("ComponentSourceG
         sb.AppendLine("}");
     }
 
-    private static void WriteFunction(
+    private static void WriteExport(
         IndentedStringBuilder sb,
         WitFuncType funcType,
         WitWorldExport export,
@@ -452,27 +520,7 @@ public class ComponentSourceGenerator() : IncrementalGenerator("ComponentSourceG
         try
         {
             sb.Append("public unsafe ");
-
-            if (funcType.Results.Length == 0)
-            {
-                sb.Append("void");
-            }
-            else if (funcType.Results.Length == 1)
-            {
-                funcType.Results[0].WriteCSharpType(sb, resolver);
-            }
-            else
-            {
-                sb.Append('(');
-                for (var i = 0; i < funcType.Results.Length; i++)
-                {
-                    if (i > 0) sb.Append(", ");
-                    funcType.Results[i].WriteCSharpType(sb, resolver);
-                }
-
-                sb.Append(')');
-            }
-
+            WriteParameters(sb, resolver, funcType.Results);
             sb.Append(' ').Append(GetName(export.ExportName)).Append('(');
 
             for (var i = 0; i < funcType.Parameters.Length; i++)
@@ -494,7 +542,7 @@ public class ComponentSourceGenerator() : IncrementalGenerator("ComponentSourceG
                 for (var index = 0; index < funcType.Parameters.Length; index++)
                 {
                     var param = funcType.Parameters[index];
-                    param.Type.WriteParameterInitializer(sb, GetName(param.Name, false), resolver, isMemoryInitializer: false);
+                    param.Type.WriteParameterInitializer(sb, GetName(param.Name, false), resolver, ignoreDispose: false, isMemoryInitializer: false);
                 }
 
                 if (sb.Length > length) sb.AppendLine();
@@ -509,7 +557,7 @@ public class ComponentSourceGenerator() : IncrementalGenerator("ComponentSourceG
                 for (var i = 0; i < funcType.Parameters.Length;)
                 {
                     var param = funcType.Parameters[i];
-                    param.Type.WriteParameterSetter(sb, "parameters", GetName(param.Name, false), i, resolver);
+                    param.Type.WriteParameterSetter(sb, "parameters", GetName(param.Name, false), i, ignoreDispose: false, resolver);
                     i += param.Type.GetParameterSize(resolver);
                 }
 
@@ -560,6 +608,173 @@ public class ComponentSourceGenerator() : IncrementalGenerator("ComponentSourceG
             sb.IndentCount = indent;
             sb.AppendLine($"// Failed to generate function '{export.ExportName}': {e.Message}");
             sb.AppendLine();
+        }
+    }
+
+    private static void WriteImport(IndentedStringBuilder sb,
+        WitFuncType funcType,
+        WitWorldImport import,
+        ITypeContainerResolver resolver)
+    {
+        sb.Append("");
+        var position = sb.Length;
+        var indent = sb.IndentCount;
+
+        try
+        {
+            var importName = GetName(import.ImportName);
+
+            sb.Append("public abstract ");
+            WriteParameters(sb, resolver, funcType.Results);
+            sb.Append(' ').Append(importName).Append('(');
+
+            for (var i = 0; i < funcType.Parameters.Length; i++)
+            {
+                if (i > 0) sb.Append(", ");
+                var param = funcType.Parameters[i];
+
+                param.Type.WriteParameter(sb, GetName(param.Name, false), resolver);
+            }
+
+            sb.AppendLine(");");
+        }
+        catch (Exception e)
+        {
+            sb.Length = position;
+            sb.IndentCount = indent;
+            sb.AppendLine($"// Failed to generate function '{import.ImportName}': {e.Message}");
+            sb.AppendLine();
+        }
+    }
+
+
+    private static void WriteImportRegistration(IndentedStringBuilder sb,
+        string className,
+        WitFuncType funcType,
+        WitWorldImport import,
+        ITypeContainerResolver resolver)
+    {
+        sb.Append("");
+        var position = sb.Length;
+        var indent = sb.IndentCount;
+
+        try
+        {
+            var importName = GetName(import.ImportName);
+
+            sb.Append("private unsafe static void Invoke").Append(importName);
+            sb.AppendLine("(object state, global::Wasmtime.ComponentCallResults args, global::Wasmtime.ComponentValue* results)");
+            sb.AppendLine("{");
+
+            sb.IncrementIndent();
+            sb.Append("var @this = (").Append(className).Append("Imports").AppendLine(")state;");
+            sb.AppendLine();
+
+            if (funcType.Results.Length > 0)
+            {
+                WriteParameters(sb, resolver, funcType.Results);
+                sb.Append(" result = ");
+            }
+
+            sb.Append("@this.").Append(importName);
+
+            if (funcType.Parameters.Length > 0)
+            {
+                sb.Append('(');
+                sb.IncrementIndent();
+
+                for (var i = 0; i < funcType.Parameters.Length; i++)
+                {
+                    sb.AppendLine(i > 0 ? "," : "");
+
+                    var param = funcType.Parameters[i];
+
+                    param.Type.WriteResultGetter(sb, "args", i, resolver);
+                }
+
+                sb.DecrementIndent();
+                sb.AppendLine();
+                sb.AppendLine(");");
+            }
+            else
+            {
+                sb.AppendLine("();");
+            }
+
+            if (funcType.Results.Length > 0)
+            {
+                sb.AppendLine();
+
+                for (var i = 0; i < funcType.Results.Length; i++)
+                {
+                    var param = funcType.Results[i];
+                    var variable = GetName(funcType, i);
+                    param.WriteParameterInitializer(sb, variable, resolver, ignoreDispose: true, isMemoryInitializer: false);
+                }
+
+                for (var i = 0; i < funcType.Results.Length; i++)
+                {
+                    var variable = GetName(funcType, i);
+                    var param = funcType.Parameters[i];
+                    param.Type.WriteParameterSetter(sb, "results", variable, i, ignoreDispose: true, resolver);
+                    i += param.Type.GetParameterSize(resolver);
+                }
+            }
+
+            sb.DecrementIndent();
+            sb.AppendLine("}");
+            sb.AppendLine();
+        }
+        catch (Exception e)
+        {
+            sb.Length = position;
+            sb.IndentCount = indent;
+            sb.AppendLine($"// Failed to generate function '{import.ImportName}': {e.Message}");
+            sb.AppendLine();
+        }
+    }
+
+    private static string GetName(WitFuncType funcType, int i)
+    {
+        var variable = "result";
+        if (funcType.Results.Length > 1)
+        {
+            variable += '.' + (i switch
+            {
+                0 => "Item1",
+                1 => "Item2",
+                2 => "Item3",
+                3 => "Item4",
+                4 => "Item5",
+                5 => "Item6",
+                6 => "Item7",
+                _ => throw new InvalidOperationException("Too many return values.")
+            });
+        }
+
+        return variable;
+    }
+
+    private static void WriteParameters(IndentedStringBuilder sb, ITypeContainerResolver resolver, EquatableArray<WitType> items)
+    {
+        if (items.Length == 0)
+        {
+            sb.Append("void");
+        }
+        else if (items.Length == 1)
+        {
+            items[0].WriteCSharpType(sb, resolver);
+        }
+        else
+        {
+            sb.Append('(');
+            for (var i = 0; i < items.Length; i++)
+            {
+                if (i > 0) sb.Append(", ");
+                items[i].WriteCSharpType(sb, resolver);
+            }
+
+            sb.Append(')');
         }
     }
 

@@ -21,6 +21,13 @@ world test {
 
     export uppercase: func(s: string) -> string;
 
+
     export set-flag: func(flag: bool);
     export get-flag: func() -> bool;
+
+    export host-callback: func();
+    export host-combine-string: func(s1: string, s2: string) -> string;
+
+    import callback: func();
+    import callback-combine-string: func(s1: string, s2: string) -> string;
 }

@@ -175,6 +175,14 @@ public class Wit
                 worldItems.Add(new WitWorldExport(name, type));
             }
 
+            if (item is WitParser.Import_Context importContext)
+            {
+                var name = importContext.identifier().GetTextWithoutEscape();
+                var type = new WitTypeVisitor(packagePrefix).Visit(importContext.type());
+
+                worldItems.Add(new WitWorldImport(name, type));
+            }
+
             if (item is WitParser.IncludeContext includeContext)
             {
                 if (includeContext.identifier() is { } identifier)

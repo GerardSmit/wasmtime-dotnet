@@ -45,5 +45,15 @@ public sealed class TestWorldImpl : ITestWorld
     {
         return _flag;
     }
+
+    public static void HostCallback()
+    {
+        exports.TestWorld.Callback();
+    }
+
+    public static string HostCombineString(string s1, string s2)
+    {
+        return exports.TestWorld.CallbackCombineString(s1, s2);
+    }
 }
 

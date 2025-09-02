@@ -175,10 +175,15 @@ public record WitType(WitTypeKind Kind)
     /// <param name="sb">The <see cref="IndentedStringBuilder"/> to write to.</param>
     /// <param name="name">The name of the parameter.</param>
     /// <param name="resolver">The type resolver.</param>
+    /// <param name="ignoreDispose"></param>
     /// <param name="isMemoryInitializer"></param>
-    public virtual void WriteParameterInitializer(IndentedStringBuilder sb, string name, ITypeContainerResolver resolver, bool isMemoryInitializer)
+    public virtual void WriteParameterInitializer(IndentedStringBuilder sb, string name,
+        ITypeContainerResolver resolver, bool ignoreDispose, bool isMemoryInitializer)
     {
-        if (!MustBeDisposed) return;
+        if (!MustBeDisposed || ignoreDispose)
+        {
+            return;
+        }
 
         sb.Append("using global::Wasmtime.ComponentValue value_").Append(name.Replace('.', '_')).Append(" = ");
         WriteCreateComponentValue(sb, name, resolver);
@@ -192,23 +197,24 @@ public record WitType(WitTypeKind Kind)
     /// <param name="parametersVariable">The name of the parameters variable.</param>
     /// <param name="name">The name of the parameter.</param>
     /// <param name="startIndex">The start index in the parameters span.</param>
+    /// <param name="ignoreDispose"></param>
     /// <param name="resolver">The type resolver.</param>
-    public virtual void WriteParameterSetter(IndentedStringBuilder sb, string parametersVariable, string name, int startIndex, ITypeContainerResolver resolver)
+    public virtual void WriteParameterSetter(IndentedStringBuilder sb, string parametersVariable, string name, int startIndex, bool ignoreDispose, ITypeContainerResolver resolver)
     {
         sb.Append(parametersVariable).Append("[").Append(startIndex).Append("] = ");
-        WriteComponentValue(sb, name, resolver);
+        WriteComponentValue(sb, name, ignoreDispose, resolver);
         sb.AppendLine(";");
     }
 
     public virtual void WriteBytes(IndentedStringBuilder sb, string name, string span, ITypeContainerResolver resolver)
     {
-        WriteComponentValue(sb, name, resolver);
+        WriteComponentValue(sb, name, false, resolver);
         sb.Append(".WriteBytes(").Append(span).AppendLine(");");
     }
 
-    public virtual void WriteComponentValue(IndentedStringBuilder sb, string name, ITypeContainerResolver resolver)
+    public virtual void WriteComponentValue(IndentedStringBuilder sb, string name, bool ignoreDispose, ITypeContainerResolver resolver)
     {
-        if (MustBeDisposed)
+        if (MustBeDisposed && !ignoreDispose)
         {
             sb.Append("value_").Append(name.Replace('.', '_'));
         }

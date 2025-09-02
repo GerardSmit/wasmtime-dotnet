@@ -21,6 +21,7 @@ public record WitRecordType(WitPackageNameVersion Package, string Name, Equatabl
         IndentedStringBuilder sb,
         string name,
         ITypeContainerResolver resolver,
+        bool ignoreDispose,
         bool isMemoryInitializer)
     {
         var builderName = $"builder_{name.Replace('.', '_')}";
@@ -28,7 +29,7 @@ public record WitRecordType(WitPackageNameVersion Package, string Name, Equatabl
 
         foreach (var field in Fields)
         {
-            field.Type.WriteParameterInitializer(sb, $"{name}.{field.CSharpName}", resolver, isMemoryInitializer: true);
+            field.Type.WriteParameterInitializer(sb, $"{name}.{field.CSharpName}", resolver, ignoreDispose, isMemoryInitializer: true);
         }
 
         sb.Append("// Initialize record ").Append(Name).Append(" (").Append(name).AppendLine(")");
@@ -42,19 +43,20 @@ public record WitRecordType(WitPackageNameVersion Package, string Name, Equatabl
                 .Append(field.CSharpName)
                 .Append(", ");
 
-            field.Type.WriteComponentValue(sb, $"{name}.{field.CSharpName}", resolver);
+            field.Type.WriteComponentValue(sb, $"{name}.{field.CSharpName}", ignoreDispose, resolver);
 
             sb.AppendLine(");");
         }
     }
 
     /// <inheritdoc />
-    public override void WriteParameterSetter(IndentedStringBuilder sb, string parametersVariable, string name, int startIndex, ITypeContainerResolver resolver)
+    public override void WriteParameterSetter(IndentedStringBuilder sb, string parametersVariable, string name,
+        int startIndex, bool ignoreDispose, ITypeContainerResolver resolver)
     {
         sb.Append(parametersVariable).Append("[").Append(startIndex).Append("] = global::Wasmtime.ComponentValue.CreateRecord(builder_").Append(name.Replace('.', '_')).AppendLine(");");
     }
 
-    public override void WriteComponentValue(IndentedStringBuilder sb, string name, ITypeContainerResolver resolver)
+    public override void WriteComponentValue(IndentedStringBuilder sb, string name, bool ignoreDispose, ITypeContainerResolver resolver)
     {
         sb.Append("global::Wasmtime.ComponentValue.CreateRecord(builder_").Append(name.Replace('.', '_')).Append(")");
     }

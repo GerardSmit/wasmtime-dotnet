@@ -70,16 +70,18 @@ public record WitCustomType(WitPackageNameVersion Package, string Name) : WitTyp
     }
 
     /// <inheritdoc />
-    public override void WriteParameterInitializer(IndentedStringBuilder sb, string name, ITypeContainerResolver resolver,
+    public override void WriteParameterInitializer(IndentedStringBuilder sb, string name,
+        ITypeContainerResolver resolver,
+        bool ignoreDispose,
         bool isMemoryInitializer)
     {
-        Resolve(resolver).WriteParameterInitializer(sb, name, resolver, isMemoryInitializer);
+        Resolve(resolver).WriteParameterInitializer(sb, name, resolver, ignoreDispose, isMemoryInitializer);
     }
 
     /// <inheritdoc />
-    public override void WriteParameterSetter(IndentedStringBuilder sb, string parametersVariable, string name, int startIndex, ITypeContainerResolver resolver)
+    public override void WriteParameterSetter(IndentedStringBuilder sb, string parametersVariable, string name, int startIndex, bool ignoreDispose, ITypeContainerResolver resolver)
     {
-        Resolve(resolver).WriteParameterSetter(sb, parametersVariable, name, startIndex, resolver);
+        Resolve(resolver).WriteParameterSetter(sb, parametersVariable, name, startIndex, ignoreDispose, resolver);
     }
 
     public override string GetCSharpType(ITypeContainerResolver resolver)
@@ -97,9 +99,9 @@ public record WitCustomType(WitPackageNameVersion Package, string Name) : WitTyp
         return Resolve(resolver).GetMemorySize(resolver);
     }
 
-    public override void WriteComponentValue(IndentedStringBuilder sb, string name, ITypeContainerResolver resolver)
+    public override void WriteComponentValue(IndentedStringBuilder sb, string name, bool ignoreDispose, ITypeContainerResolver resolver)
     {
-        Resolve(resolver).WriteComponentValue(sb, name, resolver);
+        Resolve(resolver).WriteComponentValue(sb, name, ignoreDispose, resolver);
     }
 
     public override void WriteValueGetter(IndentedStringBuilder sb, string paramName, ITypeContainerResolver resolver)

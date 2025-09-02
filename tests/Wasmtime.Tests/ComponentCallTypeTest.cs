@@ -11,7 +11,7 @@ public class ComponentCallTypeTest
     {
         using var state = new ComponentState();
 
-        Assert.Equal((sbyte)42, state.Test.AddS8(40, 2));
+        Assert.Equal((sbyte)42, state.Exports.AddS8(40, 2));
     }
 
     [Fact]
@@ -19,7 +19,7 @@ public class ComponentCallTypeTest
     {
         using var state = new ComponentState();
 
-        Assert.Equal((byte)42, state.Test.AddU8(40, 2));
+        Assert.Equal((byte)42, state.Exports.AddU8(40, 2));
     }
 
     [Fact]
@@ -27,7 +27,7 @@ public class ComponentCallTypeTest
     {
         using var state = new ComponentState();
 
-        Assert.Equal((short)42, state.Test.AddS16(40, 2));
+        Assert.Equal((short)42, state.Exports.AddS16(40, 2));
     }
 
     [Fact]
@@ -35,7 +35,7 @@ public class ComponentCallTypeTest
     {
         using var state = new ComponentState();
 
-        Assert.Equal((ushort)42, state.Test.AddU16(40, 2));
+        Assert.Equal((ushort)42, state.Exports.AddU16(40, 2));
     }
 
     [Fact]
@@ -43,7 +43,7 @@ public class ComponentCallTypeTest
     {
         using var state = new ComponentState();
 
-        Assert.Equal(42, state.Test.AddS32(40, 2));
+        Assert.Equal(42, state.Exports.AddS32(40, 2));
     }
 
     [Fact]
@@ -51,7 +51,7 @@ public class ComponentCallTypeTest
     {
         using var state = new ComponentState();
 
-        Assert.Equal(42u, state.Test.AddU32(40, 2));
+        Assert.Equal(42u, state.Exports.AddU32(40, 2));
     }
 
     [Fact]
@@ -59,7 +59,7 @@ public class ComponentCallTypeTest
     {
         using var state = new ComponentState();
 
-        Assert.Equal(42L, state.Test.AddS64(40L, 2L));
+        Assert.Equal(42L, state.Exports.AddS64(40L, 2L));
     }
 
     [Fact]
@@ -67,7 +67,7 @@ public class ComponentCallTypeTest
     {
         using var state = new ComponentState();
 
-        Assert.Equal(42UL, state.Test.AddU64(40UL, 2UL));
+        Assert.Equal(42UL, state.Exports.AddU64(40UL, 2UL));
     }
 
     [Fact]
@@ -75,7 +75,7 @@ public class ComponentCallTypeTest
     {
         using var state = new ComponentState();
 
-        Assert.Equal(4.2f, state.Test.AddF32(4.0f, 0.2f), 3);
+        Assert.Equal(4.2f, state.Exports.AddF32(4.0f, 0.2f), 3);
     }
 
     [Fact]
@@ -83,7 +83,7 @@ public class ComponentCallTypeTest
     {
         using var state = new ComponentState();
 
-        Assert.Equal(4.2, state.Test.AddF64(4.0, 0.2), 5);
+        Assert.Equal(4.2, state.Exports.AddF64(4.0, 0.2), 5);
     }
 
     [Fact]
@@ -91,7 +91,7 @@ public class ComponentCallTypeTest
     {
         using var state = new ComponentState();
 
-        Assert.Equal("UPPERCASE", state.Test.Uppercase("uppercase"));
+        Assert.Equal("UPPERCASE", state.Exports.Uppercase("uppercase"));
     }
 
     [Fact]
@@ -99,9 +99,9 @@ public class ComponentCallTypeTest
     {
         using var state = new ComponentState();
 
-        Assert.False(state.Test.GetFlag());
-        state.Test.SetFlag(true);
-        Assert.True(state.Test.GetFlag());
+        Assert.False(state.Exports.GetFlag());
+        state.Exports.SetFlag(true);
+        Assert.True(state.Exports.GetFlag());
     }
 
     [Fact]
@@ -109,7 +109,7 @@ public class ComponentCallTypeTest
     {
         using var state = new ComponentState();
 
-        var result = state.Test.AddPoint(
+        var result = state.Exports.AddPoint(
             new() { X = 1, Y = 3 },
             new() { X = 2, Y = 4 });
 
@@ -122,7 +122,7 @@ public class ComponentCallTypeTest
     {
         using var state = new ComponentState();
 
-        state.Test.RegisterEntity(new()
+        state.Exports.RegisterEntity(new()
         {
             Id = 1,
             Name = "Entity",
@@ -133,7 +133,7 @@ public class ComponentCallTypeTest
             }
         });
 
-        var entity = state.Test.GetEntity(1);
+        var entity = state.Exports.GetEntity(1);
         Assert.Equal(1, entity.Id);
         Assert.Equal("Entity", entity.Name);
         Assert.Equal(10, entity.Position.X);
@@ -149,13 +149,17 @@ internal readonly struct ComponentState : IDisposable
     public readonly Store Store;
     public readonly Component Component;
     public readonly ComponentInstance Instance;
-    public readonly Wit.Tests.Component.Test Test;
+    public readonly Wit.Tests.Component.TestExports Exports;
+    public readonly TestImportsImpl Imports;
 
     public ComponentState()
     {
         Engine = new Engine();
         Linker = new Linker(Engine);
         Linker.AddWasiP2();
+
+        Imports = new TestImportsImpl();
+        Linker.Define(Imports);
 
         Store = new Store(Engine);
         Store.AddWasiP2();
@@ -164,7 +168,7 @@ internal readonly struct ComponentState : IDisposable
         Component = Component.Compile(Engine, bytes);
 
         Instance = Store.GetComponentInstance(Component, Linker);
-        Test = new Wit.Tests.Component.Test(Instance);
+        Exports = new Wit.Tests.Component.TestExports(Instance);
     }
 
     public void Dispose()

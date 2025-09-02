@@ -10,13 +10,34 @@ namespace Wasmtime.Tests;
 public class ComponentCallTest
 {
     [Fact]
+    public void Callback()
+    {
+        using var state = new ComponentState();
+
+        state.Exports.HostCallback();
+
+        Assert.True(state.Imports.WasCalled);
+    }
+
+    [Fact]
+    public void CallbackParameters()
+    {
+        using var state = new ComponentState();
+
+        var result = state.Exports.HostCombineString("foo", "bar");
+
+        Assert.True(state.Imports.WasCalled);
+        Assert.Equal("foobar", result);
+    }
+
+    [Fact]
     public void Dispose_Store()
     {
         using var state = new ComponentState();
 
         state.Store.Dispose();
 
-        Assert.Throws<ObjectDisposedException>(() => state.Test.Uppercase("uppercase"));
+        Assert.Throws<ObjectDisposedException>(() => state.Exports.Uppercase("uppercase"));
     }
 
     [Fact]
@@ -39,7 +60,7 @@ public class ComponentCallTest
 
         for (var i = 0; i < 10; i++)
         {
-            Assert.Equal("UPPERCASE", state.Test.Uppercase("uppercase"));
+            Assert.Equal("UPPERCASE", state.Exports.Uppercase("uppercase"));
         }
     }
 
@@ -49,7 +70,7 @@ public class ComponentCallTest
         using var state = new ComponentState();
 
         await ExecuteConcurrent(
-            () => state.Test,
+            () => state.Exports,
             static s => Assert.Equal("UPPERCASE", s.Uppercase("uppercase")));
     }
 
