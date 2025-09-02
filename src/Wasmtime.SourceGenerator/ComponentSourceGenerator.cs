@@ -266,9 +266,9 @@ public class ComponentSourceGenerator() : IncrementalGenerator("ComponentSourceG
         {
             var className = GetName(world.Value.Name);
 
-            if (world.Value.Definitions.Items.Length > 0)
+            if (world.Value.Definitions.Items.Any(i => i is not (WitWorldExport or WitUse or WitWorldImport)))
             {
-                sb.Append("public partial class ").Append(className);
+                sb.Append("public partial class ").Append(className).AppendLine();
 
                 sb.AppendLine("{");
                 sb.IncrementIndent();
@@ -384,6 +384,7 @@ public class ComponentSourceGenerator() : IncrementalGenerator("ComponentSourceG
 
                 sb.DecrementIndent();
                 sb.AppendLine("}");
+                sb.AppendLine();
             }
         }
 
@@ -439,7 +440,7 @@ public class ComponentSourceGenerator() : IncrementalGenerator("ComponentSourceG
     {
         var name = GetName(interf.Name);
 
-        sb.Append("public interface ").AppendLine(name);
+        sb.Append("public class ").AppendLine(name);
         sb.AppendLine("{");
         sb.IncrementIndent();
 
