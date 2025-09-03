@@ -210,7 +210,7 @@ public readonly unsafe ref struct ComponentCallResults : IDisposable
     /// <returns>The <see cref="string"/> value at the specified index.</returns>
     /// <exception cref="ArgumentOutOfRangeException">Thrown if the index is out of range.</exception>
     /// <exception cref="InvalidOperationException">Thrown if the value at the index is not a <see cref="string"/>.</exception>
-    public unsafe string GetString(int index)
+    public string GetString(int index)
     {
         ref readonly var val = ref GetValue(index);
         return val.kind == 12 ? new ByteVector(val.of.@string).GetString() : throw new InvalidOperationException("Value is not a string");
@@ -225,8 +225,7 @@ public readonly unsafe ref struct ComponentCallResults : IDisposable
     /// <exception cref="InvalidOperationException">Thrown if the value at the index is not a <see cref="RecordBuilder"/>.</exception>
     public ListBuilder GetListBuilder(int index)
     {
-        if (index < 0 || index >= Length) throw new ArgumentOutOfRangeException(nameof(index));
-        var val = _result?.Array[index] ?? _val[index];
+        ref readonly var val = ref GetValue(index);
         return val.kind == 13 ? new ListBuilder(val.of.list) : throw new InvalidOperationException("Value is not a record");
     }
 
@@ -253,8 +252,7 @@ public readonly unsafe ref struct ComponentCallResults : IDisposable
     /// <exception cref="InvalidOperationException">Thrown if the value at the index is not a <see cref="RecordBuilder"/>.</exception>
     public T GetEnum<T>(int index, delegate* managed<ByteVector, T> toEnum)
     {
-        if (index < 0 || index >= Length) throw new ArgumentOutOfRangeException(nameof(index));
-        var val = _result?.Array[index] ?? _val[index];
+        ref readonly var val = ref GetValue(index);
         return val.kind == 17 ? toEnum(new ByteVector(val.of.enumeration)) : throw new InvalidOperationException("Value is not an enum");
     }
 
