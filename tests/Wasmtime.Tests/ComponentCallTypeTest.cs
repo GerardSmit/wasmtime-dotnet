@@ -223,6 +223,14 @@ public class ComponentCallTypeTest(ComponentFixture fixture)
     }
 
     [Fact]
+    public void Flags_None()
+    {
+        using var state = fixture.CreateState();
+
+        Assert.Equal(default, state.Exports.ReturnPermission(default));
+    }
+
+    [Fact]
     public void Flags_Single()
     {
         using var state = fixture.CreateState();

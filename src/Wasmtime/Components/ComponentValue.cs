@@ -313,15 +313,20 @@ public struct ComponentValue : IDisposable
         Span<T> values = stackalloc T[64];
         var count = expand(value, values);
 
-        var builder = new FlagsBuilder(count);
-        for (var i = 0; i < count; i++)
-        {
-            builder[i] = toBytes(values[i]);
-        }
-
         var val = new wasmtime_component_val();
         val.kind = 20;
-        val.of.flags = builder.Value;
+
+        if (count != 0)
+        {
+            var builder = new FlagsBuilder(count, disposeValues: false);
+            for (var i = 0; i < count; i++)
+            {
+                builder[i] = toBytes(values[i]);
+            }
+
+            val.of.flags = builder.Value;
+        }
+
         return new ComponentValue(val);
     }
 
@@ -427,14 +432,25 @@ public struct ComponentValue : IDisposable
     {
         if (_val.kind != 20) throw new InvalidOperationException($"Cannot convert ComponentValue of kind {_val.kind} to Enum.");
         var flags = new FlagsBuilder(_val.of.flags);
-        Span<T> enums = stackalloc T[64];
 
-        for (var i = 0; i < flags.Length; i++)
+        switch (flags.Length)
         {
-            enums[i] = toEnum(new ByteVector(flags.Value.data[i]));
-        }
+            case 0:
+                return default;
+            case 1:
+                return toEnum(flags[0]);
+            default:
+            {
+                Span<T> enums = stackalloc T[64];
 
-        return combine(enums.Slice(0, flags.Length));
+                for (var i = 0; i < flags.Length; i++)
+                {
+                    enums[i] = toEnum(new ByteVector(flags.Value.data[i]));
+                }
+
+                return combine(enums.Slice(0, flags.Length));
+            }
+        }
     }
 
     public unsafe ComponentCallResults ToTuple()
@@ -468,6 +484,9 @@ public struct ComponentValue : IDisposable
                 break;
             case 17:
                 // Enums are not disposed since the values are cached and reused (constants).
+                break;
+            case 20:
+                new FlagsBuilder(val.of.flags).Dispose();
                 break;
         }
 

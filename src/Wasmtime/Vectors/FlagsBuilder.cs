@@ -8,14 +8,17 @@ namespace Wasmtime;
 public readonly unsafe struct FlagsBuilder : IDisposable
 {
     private readonly wasmtime_component_valflags _vector;
+    private readonly bool _disposeValues;
 
-    internal FlagsBuilder(wasmtime_component_valflags vector)
+    internal FlagsBuilder(wasmtime_component_valflags vector, bool disposeValues = false)
     {
         _vector = vector;
+        _disposeValues = disposeValues;
     }
 
-    public FlagsBuilder(int size)
+    public FlagsBuilder(int size, bool disposeValues = true)
     {
+        _disposeValues = disposeValues;
         fixed (wasmtime_component_valflags* vec = &_vector)
         {
             wasmtime_component_valflags_new_uninit(vec, (UIntPtr)size);
@@ -56,6 +59,11 @@ public readonly unsafe struct FlagsBuilder : IDisposable
 
         for (var i = 0; i < (int)_vector.size; i++)
         {
+            if (_disposeValues)
+            {
+                new ByteVector(_vector.data[i]).Dispose();
+            }
+
             _vector.data[i] = default;
         }
 
