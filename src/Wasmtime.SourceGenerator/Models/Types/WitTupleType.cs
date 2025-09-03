@@ -35,4 +35,21 @@ public record WitTupleType(
         }
         sb.Append(')');
     }
+
+    /// <inheritdoc />
+    public override void WriteValueGetter(IndentedStringBuilder sb, string paramName, ITypeContainerResolver resolver)
+    {
+        sb.Append('(');
+
+        // TODO: Cache the tuple variable so it's only called once?
+        var tuple = paramName + ".ToTuple()";
+
+        for (var i = 0; i < ElementTypes.Length; i++)
+        {
+            if (i > 0) sb.Append(", ");
+            ElementTypes[i].WriteResultGetter(sb, tuple, i, resolver);
+        }
+
+        sb.Append(')');
+    }
 }

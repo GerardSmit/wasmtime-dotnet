@@ -303,9 +303,16 @@ public class ComponentSourceGenerator() : IncrementalGenerator("ComponentSourceG
                 // Exports
                 foreach (var export in world.Value.Definitions.Items.OfType<WitWorldExport>())
                 {
-                    if (export.Type.Kind != WitTypeKind.Func || export.Type is not WitFuncType funcType)
+                    var type = export.Type;
+
+                    if (type is WitCustomType customType)
                     {
-                        sb.AppendLine($"// Unsupported export '{export.ExportName}' of type '{export.Type.Kind}'");
+                        type = customType.Resolve(projectResolver);
+                    }
+
+                    if (export.Type.Kind != WitTypeKind.Func || type is not WitFuncType funcType)
+                    {
+                        sb.AppendLine($"// Unsupported export '{export.ExportName}' of type '{type.Kind}'");
                         continue;
                     }
 
@@ -336,9 +343,16 @@ public class ComponentSourceGenerator() : IncrementalGenerator("ComponentSourceG
                 // Imports
                 foreach (var import in world.Value.Definitions.Items.OfType<WitWorldImport>())
                 {
-                    if (import.Type.Kind != WitTypeKind.Func || import.Type is not WitFuncType funcType)
+                    var type = import.Type;
+
+                    if (type is WitCustomType customType)
                     {
-                        sb.AppendLine($"// Unsupported export '{import.ImportName}' of type '{import.Type.Kind}'");
+                        type = customType.Resolve(projectResolver);
+                    }
+
+                    if (import.Type.Kind != WitTypeKind.Func || type is not WitFuncType funcType)
+                    {
+                        sb.AppendLine($"// Unsupported export '{import.ImportName}' of type '{type.Kind}'");
                         continue;
                     }
 

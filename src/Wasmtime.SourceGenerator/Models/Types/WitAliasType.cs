@@ -6,11 +6,15 @@ namespace Wasmtime.SourceGenerator.Models;
 /// </summary>
 /// <param name="Parent">The parent custom type.</param>
 /// <param name="Name">The name of the subtype.</param>
-public record WitStrictCustomType(WitCustomType Parent, string Name) : WitCustomType(Parent.Package, Name)
+public record WitAliasType(
+    WitCustomType Parent,
+    string Name
+) : WitCustomType(Parent.Package, Name)
 {
-    protected internal override ITypeContainer GetContainer(ITypeContainerResolver resolver, bool allowContainer = false)
+    protected internal override ITypeContainer GetContainer(ITypeContainerResolver resolver,
+        bool allowContainer = false, string? typeName = null)
     {
-        var parentContainer = Parent.GetContainer(resolver, allowContainer: true);
+        var parentContainer = Parent.GetContainer(resolver, allowContainer: true, typeName: Name);
 
         if (!parentContainer.TryGetContainer(Parent.Name, out var container))
         {

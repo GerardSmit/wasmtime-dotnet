@@ -24,6 +24,29 @@ public class WitTypeVisitor(WitPackageNameVersion package) : WitParserBaseVisito
         return new WitCustomType(package, name);
     }
 
+    public override WitType VisitExternalType(WitParser.ExternalTypeContext context)
+    {
+        var fullName = WitPackageNameVersion.Parse(context.packageName());
+        var (name, externalPackage) = fullName.WithoutLastNamePart();
+
+        return new WitCustomType(externalPackage, name);
+    }
+
+    public override WitType VisitExternType(WitParser.ExternTypeContext context)
+    {
+        if (context.func() is {} func)
+        {
+            return VisitFunc(func);
+        }
+
+        if (context.@interface() is {} interf)
+        {
+            return VisitInterface(interf);
+        }
+
+        throw new NotSupportedException("Unknown extern type");
+    }
+
     public override WitType VisitBoolType(WitParser.BoolTypeContext context)
     {
         return WitType.Bool;
@@ -55,7 +78,12 @@ public class WitTypeVisitor(WitPackageNameVersion package) : WitParserBaseVisito
 
     public override WitType VisitFuncType(WitParser.FuncTypeContext context)
     {
-        var parameters = context.funcParam()
+        return Visit(context.func());
+    }
+
+    public override WitType VisitFunc(WitParser.FuncContext context)
+    {
+        var parameters = context.funcParamList().funcParam()
             .Select(x => new WitFuncParameter(x.identifier().GetTextWithoutEscape(), Visit(x.type())))
             .ToArray();
 
@@ -118,6 +146,13 @@ public class WitTypeVisitor(WitPackageNameVersion package) : WitParserBaseVisito
     public override WitType VisitListType(WitParser.ListTypeContext context)
     {
         return new WitListType(
+            Visit(context.type())
+        );
+    }
+
+    public override WitType VisitBorrowType(WitParser.BorrowTypeContext context)
+    {
+        return new WitBorrowType(
             Visit(context.type())
         );
     }

@@ -25,12 +25,14 @@ public sealed unsafe class Store : IDisposable
 
     internal bool IsWasiP2Added => _wasiP2Config != null;
 
-    public void AddWasiP2()
+    public void AddWasiP2(bool inheritStdin = false, bool inheritStdout = false, bool inheritStderr = false)
     {
         var cfg = wasmtime_wasip2_config_new();
-        wasmtime_wasip2_config_inherit_stdin(cfg);
-        wasmtime_wasip2_config_inherit_stdout(cfg);
-        wasmtime_wasip2_config_inherit_stderr(cfg);
+
+        if (inheritStdin) wasmtime_wasip2_config_inherit_stdin(cfg);
+        if (inheritStdout) wasmtime_wasip2_config_inherit_stdout(cfg);
+        if (inheritStderr) wasmtime_wasip2_config_inherit_stderr(cfg);
+
         wasmtime_context_set_wasip2(Context, cfg);
 
         _wasiP2Config = cfg;

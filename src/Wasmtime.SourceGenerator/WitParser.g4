@@ -38,7 +38,12 @@ type
     | Result                                                                    # ResultEmptyType
     | Stream OpenAngle type CloseAngle                                          # StreamType
     | Tuple OpenAngle (type (Comma type)*)? CloseAngle                          # TupleType
-    | Func OpenParen (funcParam (Comma funcParam)*)? CloseParen funcResult?     # FuncType
+    | func                                                                      # FuncType
+    | Borrow OpenAngle type CloseAngle                                          # BorrowType
+    ;
+
+func
+    : Func OpenParen funcParamList CloseParen funcResult?
     ;
 
 gate
@@ -48,7 +53,7 @@ gate
 gateItem
     : Unstable OpenParen Feature Equal identifier CloseParen                    # FeatureGateUnstable
     | Since OpenParen Version Equal semVersion CloseParen                       # FeatureGateSince
-    | Deprecated OpenParen (Feature Equal identifier | Since Equal semVersion)? CloseParen # Feature
+    | Deprecated OpenParen (Feature Equal identifier | Version Equal semVersion)? CloseParen # Feature
     ;
 
 funcParam
@@ -60,16 +65,25 @@ funcResult
     ;
 
 export
-    : Export identifier (Colon type)? Semicolon
+    : gate? Export importExport
     ;
 
 import_
-    : Import identifier Colon interface Semicolon
-    | Import (packageName | identifier (Colon type)?) Semicolon
+    : gate? Import importExport
+    ;
+
+importExport
+    : identifier Colon externType
+    | packageName Semicolon
+    ;
+
+externType
+    : func Semicolon
+    | interface
     ;
 
 include
-    : Include (packageName | identifier) with? Semicolon
+    : gate? Include (packageName | identifier) with? Semicolon
     ;
 
 with
@@ -81,7 +95,7 @@ withItem
     ;
 
 record
-    : Record identifier? OpenCurly (recordDefinition (Comma recordDefinition)*)? Comma? CloseCurly
+    : gate? Record identifier? OpenCurly (recordDefinition (Comma recordDefinition)*)? Comma? CloseCurly
     ;
 
 recordDefinition
@@ -89,11 +103,19 @@ recordDefinition
     ;
 
 enum
-    : Enum identifier? OpenCurly (identifier (Comma identifier)*)? Comma? CloseCurly
+    : gate? Enum identifier? OpenCurly (enumItem (Comma enumItem)* Comma?)? CloseCurly
+    ;
+
+enumItem
+    : gate? identifier
     ;
 
 flags
-    : Flags identifier? OpenCurly (identifier (Comma identifier)*)? Comma? CloseCurly
+    : gate? Flags identifier? OpenCurly (flagsItem (Comma flagsItem)*)? Comma? CloseCurly
+    ;
+
+flagsItem
+    : gate? identifier
     ;
 
 world
@@ -101,11 +123,11 @@ world
     ;
 
 typeAlias
-    : Type identifier Equal type Semicolon
+    : gate? Type identifier Equal type Semicolon
     ;
 
 worldItem
-    : gate? worldDefinition
+    : worldDefinition
     ;
 
 worldDefinition
@@ -116,11 +138,11 @@ worldDefinition
     ;
 
 interface
-    : Interface identifier? OpenCurly interfaceDefinition* CloseCurly
+    : gate? Interface identifier? OpenCurly interfaceDefinition* CloseCurly
     ;
 
 interfaceDefinition
-    : identifier Colon type Semicolon
+    : gate? identifier Colon type Semicolon
     | typeDef
     ;
 
@@ -136,7 +158,7 @@ typeDef
     ;
 
 use
-    : Use packageName Dot OpenCurly (useItem (Comma useItem)*)? CloseCurly Semicolon
+    : gate? Use packageName Dot OpenCurly (useItem (Comma useItem)*)? CloseCurly Semicolon
     ;
 
 useItem
@@ -148,24 +170,32 @@ package
     ;
 
 resource
-    : Resource identifier (Semicolon|OpenCurly (resourceMethod Semicolon)* CloseCurly)
+    : gate? Resource identifier (Semicolon|OpenCurly (resourceMethod Semicolon)* CloseCurly)
     ;
 
 static
     : Static
     ;
 
+constructor
+    : Constructor
+    ;
+
 resourceMethod
-    : gate? Constructor identifier OpenParen (funcParam (Comma funcParam)*)? CloseParen  # ResourceConstructor
-    | gate? identifier static? Colon type                                                # ResourceFunction
+    : gate? constructor OpenParen funcParamList CloseParen  # ResourceConstructor
+    | gate? identifier Colon static? type                   # ResourceFunction
+    ;
+
+funcParamList
+    : (funcParam (Comma funcParam)* Comma?)?
     ;
 
 variant
-    : Variant identifier? OpenCurly (variantDefinition (Comma variantDefinition)*)? Comma? CloseCurly
+    : gate? Variant identifier? OpenCurly (variantDefinition (Comma variantDefinition)*)? Comma? CloseCurly
     ;
 
 variantDefinition
-    : identifier (OpenParen type CloseParen)?
+    : gate? identifier (OpenParen type CloseParen)?
     ;
 
 packageDefinition

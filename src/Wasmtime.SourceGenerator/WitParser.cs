@@ -35,7 +35,16 @@ public class Wit
                 ErrorHandler = new BailErrorStrategy(),
             };
 
-            var file = parser.file();
+            WitParser.FileContext? file;
+
+            try
+            {
+                file = parser.file();
+            }
+            catch
+            {
+                throw;
+            }
 
             if (file.filePackage()?.packageName() is { } packageName)
             {
@@ -164,22 +173,19 @@ public class Wit
     {
         var worldItems = new List<WitTypeDef>();
         var packagePrefix = packageName.AddLastName(worldName);
+        var typeVisitor = new WitTypeVisitor(packagePrefix);
 
         foreach (var item in items)
         {
             if (item is WitParser.ExportContext exportContext)
             {
-                var name = exportContext.identifier().GetTextWithoutEscape();
-                var type = new WitTypeVisitor(packagePrefix).Visit(exportContext.type());
-
+                var (name, type) = ImportExport(packageName, exportContext.importExport(), typeVisitor);
                 worldItems.Add(new WitWorldExport(name, type));
             }
 
             if (item is WitParser.Import_Context importContext)
             {
-                var name = importContext.identifier().GetTextWithoutEscape();
-                var type = new WitTypeVisitor(packagePrefix).Visit(importContext.type());
-
+                var (name, type) = ImportExport(packageName, importContext.importExport(), typeVisitor);
                 worldItems.Add(new WitWorldImport(name, type));
             }
 
@@ -207,6 +213,37 @@ public class Wit
             worldName,
             new WitTypeDefinitions(worldItems.ToArray())
         );
+    }
+
+    private static (string name, WitType type) ImportExport(WitPackageNameVersion packageName,
+        WitParser.ImportExportContext importExport, WitTypeVisitor typeVisitor)
+    {
+        string name;
+        WitType type;
+
+
+        if (importExport.externType() is {} externType)
+        {
+            name = importExport.identifier().GetTextWithoutEscape();
+            type = typeVisitor.Visit(externType);
+        }
+        else
+        {
+            var otherPackage = WitPackageNameVersion.Parse(importExport.packageName());
+
+            if (otherPackage.IsIdentifierOnly)
+            {
+                name = otherPackage.PackageName.AllParts[0];
+                type = new WitCustomType(packageName, name);
+            }
+            else
+            {
+                (name, otherPackage) = otherPackage.WithoutLastNamePart();
+                type = new WitCustomType(otherPackage, name);
+            }
+        }
+
+        return (name, type);
     }
 
     private static WitTypeDef TypeDef(
@@ -284,8 +321,71 @@ public class Wit
                 otherName,
                 items
             );
+        }
 
+        if (context.resource() is {} resourceContext)
+        {
+            var name = resourceContext.identifier().GetTextWithoutEscape();
+            var typeVisitor = new WitTypeVisitor(packageName.Value);
 
+            var constructors = resourceContext.resourceMethod()
+                .OfType<WitParser.ResourceConstructorContext>()
+                .Select(x => new WitResourceConstructor(
+                    x.funcParamList().funcParam()
+                        .Select(y => new WitFuncParameter(y.identifier().GetTextWithoutEscape(), typeVisitor.Visit(y.type())))
+                        .ToArray()
+                ))
+                .ToArray();
+
+            var methods = resourceContext.resourceMethod()
+                .OfType<WitParser.ResourceFunctionContext>()
+                .Select(x => new WitField(
+                    x.identifier().GetTextWithoutEscape(),
+                    typeVisitor.Visit(x.type())
+                ))
+                .ToArray();
+
+            return new WitResource(name, constructors, methods);
+        }
+
+        if (context.typeAlias() is { } typeAliasContext)
+        {
+            return new WitTypeAlias(
+                typeAliasContext.identifier().GetTextWithoutEscape(),
+                new WitTypeVisitor(packageName.Value).Visit(typeAliasContext.type())
+            );
+        }
+
+        if (context.@enum() is { } enumContext)
+        {
+            return new WitEnum(
+                packageName.Value,
+                enumContext.identifier().GetTextWithoutEscape(),
+                enumContext.enumItem().Select(x => x.identifier().GetTextWithoutEscape()).ToArray()
+            );
+        }
+
+        if (context.flags() is { } flagsContext)
+        {
+            return new WitFlags(
+                flagsContext.identifier().GetTextWithoutEscape(),
+                flagsContext.flagsItem().Select(x => x.identifier().GetTextWithoutEscape()).ToArray()
+            );
+        }
+
+        if (context.variant() is { } variantContext)
+        {
+            var name = variantContext.identifier().GetTextWithoutEscape();
+            var typeVisitor = new WitTypeVisitor(packageName.Value);
+
+            var cases = variantContext.variantDefinition()
+                .Select(x => new WitVariantCase(
+                    x.identifier().GetTextWithoutEscape(),
+                    x.type() is null ? null : typeVisitor.Visit(x.type())
+                ))
+                .ToArray();
+
+            return new WitVariant(packageName.Value, name, cases);
         }
 
         throw new NotSupportedException($"Type definition of kind '{context.children.First().GetType().Name}' is not supported.");

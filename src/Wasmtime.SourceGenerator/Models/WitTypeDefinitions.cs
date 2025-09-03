@@ -43,8 +43,23 @@ public record WitTypeDefinitions(EquatableArray<WitTypeDef> Items)
 
                 foreach (var (name, alias) in use.Items)
                 {
-                    dict[alias] = new WitStrictCustomType(container, name);
+                    dict[alias] = new WitAliasType(container, name);
                 }
+            }
+
+            if (item is WitEnum @enum)
+            {
+                dict[@enum.Name] = @enum.Type;
+            }
+
+            if (item is WitTypeAlias typeAlias)
+            {
+                dict[typeAlias.Name] = typeAlias.Type;
+            }
+
+            if (item is WitVariant variant)
+            {
+                dict[variant.Name] = variant.Type;
             }
         }
 

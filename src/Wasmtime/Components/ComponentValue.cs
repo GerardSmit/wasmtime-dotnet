@@ -342,6 +342,14 @@ public readonly struct ComponentValue : IDisposable
         return new ByteVector(_val.of.@string).GetString();
     }
 
+    public unsafe ComponentCallResults ToTuple()
+    {
+        if (_val.kind != 15) throw new InvalidOperationException($"Cannot convert ComponentValue of kind {_val.kind} to Tuple.");
+        var tuple = _val.of.tuple;
+
+        return new ComponentCallResults(tuple.data, (int)tuple.size);
+    }
+
     public RecordBuilder ToRecordBuilder()
     {
         if (_val.kind != 14) throw new InvalidOperationException($"Cannot convert ComponentValue of kind {_val.kind} to Record.");

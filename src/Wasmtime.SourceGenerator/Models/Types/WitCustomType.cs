@@ -3,25 +3,51 @@
 /// <summary>
 /// Represents a user-defined type.
 /// </summary>
-/// <param name="Package">The package that requested this type. It's possible that the type is defined in the previous name parts.</param>
-/// <param name="Name">The name of the type.</param>
-public record WitCustomType(WitPackageNameVersion Package, string Name) : WitType(WitTypeKind.User)
+public record WitCustomType : WitType
 {
+    /// <summary>
+    /// Represents a user-defined type.
+    /// </summary>
+    /// <param name="Package">The package that requested this type. It's possible that the type is defined in the previous name parts.</param>
+    /// <param name="Name">The name of the type.</param>
+    public WitCustomType(WitPackageNameVersion Package, string Name) : base(WitTypeKind.User)
+    {
+        this.Package = Package;
+        this.Name = Name;
+    }
+
     /// <summary>
     /// Gets the container that holds this type.
     /// </summary>
     /// <param name="resolver">The type resolver to use.</param>
     /// <param name="allowContainer">If the type was not found, allow returning a container with the same name. This is used for subtypes.</param>
+    /// <param name="typeName"></param>
     /// <returns>The container that holds this type.</returns>
-    protected internal virtual ITypeContainer GetContainer(ITypeContainerResolver resolver, bool allowContainer = false)
+    protected internal virtual ITypeContainer GetContainer(
+        ITypeContainerResolver resolver,
+        bool allowContainer = false,
+        string? typeName = null
+    )
     {
+        typeName ??= Name;
+
         var current = Package;
 
         while (current.PackageName.Name.Length > 0)
         {
             var container = resolver.Resolve(current);
 
-            if (container.TryGetType(Name, out _) || (allowContainer && container.TryGetContainer(Name, out _)))
+            if ((
+                    container.TryGetType(typeName, out var type)
+                    // Nested aliases are not allowed if we're looking for a container
+                    && (
+                        !allowContainer
+                        || type is not WitAliasType
+                    )
+                ) || (
+                    allowContainer
+                    && container.TryGetContainer(Name, out _)
+                ))
             {
                 return container;
             }
@@ -30,10 +56,10 @@ public record WitCustomType(WitPackageNameVersion Package, string Name) : WitTyp
             (_, current) = current.WithoutLastNamePart();
         }
 
-        throw new InvalidOperationException($"Could not resolve type '{Name}' in '{Package}'");
+        throw new InvalidOperationException($"Could not resolve type '{typeName}' in '{Package}'");
     }
 
-    private WitType Resolve(ITypeContainerResolver resolver)
+    public WitType Resolve(ITypeContainerResolver resolver)
     {
         var container = GetContainer(resolver, allowContainer: false);
 
@@ -107,5 +133,17 @@ public record WitCustomType(WitPackageNameVersion Package, string Name) : WitTyp
     public override void WriteValueGetter(IndentedStringBuilder sb, string paramName, ITypeContainerResolver resolver)
     {
         Resolve(resolver).WriteValueGetter(sb, paramName, resolver);
+    }
+
+    /// <summary>The package that requested this type. It's possible that the type is defined in the previous name parts.</summary>
+    public WitPackageNameVersion Package { get; init; }
+
+    /// <summary>The name of the type.</summary>
+    public string Name { get; init; }
+
+    public void Deconstruct(out WitPackageNameVersion Package, out string Name)
+    {
+        Package = this.Package;
+        Name = this.Name;
     }
 }

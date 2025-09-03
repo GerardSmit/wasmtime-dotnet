@@ -25,6 +25,9 @@
         <None Include="..\Wasmtime.Components.Tests\**\*.wit" Link="%(RecursiveDir)%(Filename)%(Extension)" Exclude="**/bin/**;**/obj/**">
             <CopyToOutputDirectory>Always</CopyToOutputDirectory>
         </None>
+        <None Include="wasip2\**\*.wit" Link="wasip2\%(RecursiveDir)%(Filename)%(Extension)" Exclude="**/bin/**;**/obj/**">
+            <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+        </None>
     </ItemGroup>
 
     <ItemGroup>

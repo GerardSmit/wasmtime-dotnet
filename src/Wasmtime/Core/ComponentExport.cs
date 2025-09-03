@@ -79,21 +79,20 @@ internal unsafe class ComponentExport
 
     public static nint RegisterFunction(ComponentFunctionDelegate function, object? state = null)
     {
-        var id = (ushort)Interlocked.Increment(ref FunctionId);
+        var id = Interlocked.Increment(ref FunctionId);
 
         if (id >= MaxFunctions)
         {
             throw new InvalidOperationException("Maximum number of functions reached.");
         }
 
-        var data = (ushort*)(StaticFunctionIds + id);
-        *data = id;
+        var data = StaticFunctionIds + id;
 
-        if (!RegisteredFunctions.TryAdd((nint)data, new ComponentFunction(state, function)))
+        if (!RegisteredFunctions.TryAdd(data, new ComponentFunction(state, function)))
         {
             throw new InvalidOperationException("Could not register function.");
         }
 
-        return (nint)data;
+        return data;
     }
 }

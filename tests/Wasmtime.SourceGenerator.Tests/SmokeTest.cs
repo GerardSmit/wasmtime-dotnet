@@ -7,10 +7,12 @@ namespace Wasmtime.SourceGenerator.Tests;
 
 public class SmokeTest(ITestOutputHelper output)
 {
-    [Fact]
-    public void Parse()
+    [Theory]
+    [InlineData("wasip2")]
+    [InlineData("wit")]
+    public void Parse(string directoryName)
     {
-        var directory = Path.GetFullPath("wit");
+        var directory = Path.GetFullPath(directoryName);
         Assert.True(Directory.Exists(directory));
 
         var files = Directory.GetFiles(directory, "*.wit", SearchOption.AllDirectories);
