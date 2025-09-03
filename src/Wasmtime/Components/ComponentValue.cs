@@ -408,29 +408,22 @@ public struct ComponentValue : IDisposable
 
     internal static void Dispose(ref wasmtime_component_val val)
     {
-        if (val.kind == 0)
+        switch (val.kind)
         {
-            return;
-        }
-
-        if (val.kind == 12)
-        {
-            new ByteVector(val.of.@string).Dispose();
-        }
-
-        if (val.kind == 13)
-        {
-            new ListBuilder(val.of.list).Dispose();
-        }
-
-        if (val.kind == 14)
-        {
-            new RecordBuilder(val.of.record).Dispose();
-        }
-
-        if (val.kind == 17)
-        {
-            // Enums are not disposed, since the values are cached and reused (constants).
+            case 0:
+                return;
+            case 12:
+                new ByteVector(val.of.@string).Dispose();
+                break;
+            case 13:
+                new ListBuilder(val.of.list).Dispose();
+                break;
+            case 14:
+                new RecordBuilder(val.of.record).Dispose();
+                break;
+            case 17:
+                // Enums are not disposed since the values are cached and reused (constants).
+                break;
         }
 
         val = default;

@@ -114,7 +114,7 @@ public readonly unsafe ref struct RecordBuilder : IDisposable
 
         for (var i = 0; i < (int)_source.size; i++)
         {
-            // Names are not disposed, since the values are cached and reused (constants).
+            // Names are not disposed since the values are cached and reused (constants).
             data[i].name = default;
             ComponentValue.Dispose(ref data[i].val);
         }
