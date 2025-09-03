@@ -24,13 +24,13 @@ public record WitType(WitTypeKind Kind)
     public virtual bool MustBeDisposed => Kind is WitTypeKind.String;
 
     /// <summary>
-    /// Gets the C# type that corresponds to this WIT type.
+    /// Writes the C# type that corresponds to this WIT type to the provided <see cref="IndentedStringBuilder"/>.
     /// </summary>
+    /// <param name="sb">The <see cref="IndentedStringBuilder"/> to write to.</param>
     /// <param name="resolver"></param>
-    /// <returns>The C# type as a string.</returns>
-    public virtual string GetCSharpType(ITypeContainerResolver resolver)
+    public virtual void WriteCSharpType(IndentedStringBuilder sb, ITypeContainerResolver resolver)
     {
-        return Kind switch
+        sb.Append(Kind switch
         {
             WitTypeKind.Bool => "bool",
             WitTypeKind.U8 => "byte",
@@ -47,17 +47,7 @@ public record WitType(WitTypeKind Kind)
             WitTypeKind.String => "string",
             WitTypeKind.Result => "global::Wasmtime.Result",
             _ => throw new NotSupportedException($"C# type mapping is not supported for WIT type kind '{Kind}'"),
-        };
-    }
-
-    /// <summary>
-    /// Writes the C# type that corresponds to this WIT type to the provided <see cref="IndentedStringBuilder"/>.
-    /// </summary>
-    /// <param name="sb">The <see cref="IndentedStringBuilder"/> to write to.</param>
-    /// <param name="resolver"></param>
-    public virtual void WriteCSharpType(IndentedStringBuilder sb, ITypeContainerResolver resolver)
-    {
-        sb.Append(GetCSharpType(resolver));
+        });
     }
 
     protected virtual void WriteCreateComponentValue(IndentedStringBuilder sb, string paramKey, ITypeContainerResolver resolver)
@@ -100,29 +90,7 @@ public record WitType(WitTypeKind Kind)
     /// <param name="resolver"></param>
     public virtual void WriteResultGetter(IndentedStringBuilder sb, string paramName, int index, ITypeContainerResolver resolver)
     {
-        sb.Append(paramName).Append('.');
-
-        sb.Append(Kind switch
-        {
-            WitTypeKind.Bool => "GetBoolean",
-            WitTypeKind.U8 => "GetByte",
-            WitTypeKind.S8 => "GetSByte",
-            WitTypeKind.U16 => "GetUInt16",
-            WitTypeKind.S16 => "GetInt16",
-            WitTypeKind.U32 => "GetUInt32",
-            WitTypeKind.S32 => "GetInt32",
-            WitTypeKind.U64 => "GetUInt64",
-            WitTypeKind.S64 => "GetInt64",
-            WitTypeKind.F32 => "GetFloat",
-            WitTypeKind.F64 => "GetDouble",
-            WitTypeKind.Char => "GetChar",
-            WitTypeKind.String => "GetString",
-            WitTypeKind.Record => "GetRecordBuilder",
-            WitTypeKind.Result => "GetResult",
-            _ => throw new NotSupportedException($"Return type '{Kind}' is not supported.")
-        });
-
-        sb.Append('(').Append(index).Append(')');
+        WriteValueGetter(sb, $"{paramName}[{index}]", $"{paramName}_{index}", resolver);
     }
 
     /// <summary>

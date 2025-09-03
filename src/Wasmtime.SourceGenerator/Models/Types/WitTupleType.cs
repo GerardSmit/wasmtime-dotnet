@@ -7,18 +7,6 @@ public record WitTupleType(
     EquatableArray<WitType> ElementTypes
 ) : WitType(WitTypeKind.Tuple)
 {
-    /// <param name="resolver"></param>
-    /// <inheritdoc />
-    public override string GetCSharpType(ITypeContainerResolver resolver)
-    {
-        if (ElementTypes.Length == 0)
-        {
-            throw new InvalidOperationException("Tuples with zero elements are not supported.");
-        }
-
-        return "(" + string.Join(", ", ElementTypes.Select(t => t.GetCSharpType(resolver))) + ")";
-    }
-
     /// <inheritdoc />
     public override void WriteCSharpType(IndentedStringBuilder sb, ITypeContainerResolver resolver)
     {

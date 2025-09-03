@@ -247,14 +247,14 @@ public unsafe class ComponentInstance
         var results = ComponentCallResultsInternal.ThreadInstance;
         results.Initialize(resultCount, function.Function, _store.Context);
 
-        fixed (wasmtime_component_val* resultsPtr = results.Array)
+        fixed (ComponentValue* resultsPtr = results.Array)
         {
             var error = wasmtime_component_func_call(
                 &function.Function,
                 _store.Context,
                 (wasmtime_component_val*)values,
                 (nuint)valuesLength,
-                resultsPtr,
+                (wasmtime_component_val*)resultsPtr,
                 (nuint)results.Length
             );
 

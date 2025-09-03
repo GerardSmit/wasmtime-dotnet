@@ -15,7 +15,7 @@ namespace Wasmtime;
 /// </remarks>
 public readonly unsafe ref struct ComponentCallResults : IDisposable
 {
-    private readonly wasmtime_component_val* _val;
+    private readonly ComponentValue* _val;
     private readonly SemaphoreSlim? _semaphore;
     private readonly ComponentCallResultsInternal? _result;
 
@@ -38,7 +38,7 @@ public readonly unsafe ref struct ComponentCallResults : IDisposable
     /// <param name="length">The number of result values.</param>
     internal ComponentCallResults(wasmtime_component_val* val, int length)
     {
-        _val = val;
+        _val = (ComponentValue*)val;
         Length = length;
     }
 
@@ -47,213 +47,15 @@ public readonly unsafe ref struct ComponentCallResults : IDisposable
     /// </summary>
     public int Length { get; }
 
-    /// <summary>
-    /// Gets the <see cref="bool"/> result at the specified index.
-    /// </summary>
-    /// <param name="index">The zero-based index of the result.</param>
-    /// <returns>The <see cref="bool"/> value at the specified index.</returns>
-    /// <exception cref="ArgumentOutOfRangeException">Thrown if the index is out of range.</exception>
-    /// <exception cref="InvalidOperationException">Thrown if the value at the index is not a <see cref="bool"/>.</exception>
-    public bool GetBoolean(int index)
+    public ref readonly ComponentValue this[int index]
     {
-        ref readonly var val = ref GetValue(index);
-        return val.kind == 0 ? (val.of.boolean != 0) : throw new InvalidOperationException("Value is not a boolean");
-    }
+        get
+        {
+            if (index < 0 || index >= Length) ThrowOutOfRange();
 
-    /// <summary>
-    /// Gets the <see cref="sbyte"/> result at the specified index.
-    /// </summary>
-    /// <param name="index">The zero-based index of the result.</param>
-    /// <returns>The <see cref="sbyte"/> value at the specified index.</returns>
-    /// <exception cref="ArgumentOutOfRangeException">Thrown if the index is out of range.</exception>
-    /// <exception cref="InvalidOperationException">Thrown if the value at the index is not an <see cref="sbyte"/>.</exception>
-    public sbyte GetSByte(int index)
-    {
-        ref readonly var val = ref GetValue(index);
-        return val.kind == 1 ? val.of.s8 : throw new InvalidOperationException("Value is not an sbyte");
-    }
-
-    /// <summary>
-    /// Gets the <see cref="byte"/> result at the specified index.
-    /// </summary>
-    /// <param name="index">The zero-based index of the result.</param>
-    /// <returns>The <see cref="byte"/> value at the specified index.</returns>
-    /// <exception cref="ArgumentOutOfRangeException">Thrown if the index is out of range.</exception>
-    /// <exception cref="InvalidOperationException">Thrown if the value at the index is not a <see cref="byte"/>.</exception>
-    public byte GetByte(int index)
-    {
-        ref readonly var val = ref GetValue(index);
-        return val.kind == 2 ? val.of.u8 : throw new InvalidOperationException("Value is not a byte");
-    }
-
-    /// <summary>
-    /// Gets the <see cref="short"/> result at the specified index.
-    /// </summary>
-    /// <param name="index">The zero-based index of the result.</param>
-    /// <returns>The <see cref="short"/> value at the specified index.</returns>
-    /// <exception cref="ArgumentOutOfRangeException">Thrown if the index is out of range.</exception>
-    /// <exception cref="InvalidOperationException">Thrown if the value at the index is not a <see cref="short"/>.</exception>
-    public short GetInt16(int index)
-    {
-        ref readonly var val = ref GetValue(index);
-        return val.kind == 3 ? val.of.s16 : throw new InvalidOperationException("Value is not an int16");
-    }
-
-    /// <summary>
-    /// Gets the <see cref="ushort"/> result at the specified index.
-    /// </summary>
-    /// <param name="index">The zero-based index of the result.</param>
-    /// <returns>The <see cref="ushort"/> value at the specified index.</returns>
-    /// <exception cref="ArgumentOutOfRangeException">Thrown if the index is out of range.</exception>
-    /// <exception cref="InvalidOperationException">Thrown if the value at the index is not a <see cref="ushort"/>.</exception>
-    public ushort GetUInt16(int index)
-    {
-        ref readonly var val = ref GetValue(index);
-        return val.kind == 4 ? val.of.u16 : throw new InvalidOperationException("Value is not a uint16");
-    }
-
-    /// <summary>
-    /// Gets the <see cref="int"/> result at the specified index.
-    /// </summary>
-    /// <param name="index">The zero-based index of the result.</param>
-    /// <returns>The <see cref="int"/> value at the specified index.</returns>
-    /// <exception cref="ArgumentOutOfRangeException">Thrown if the index is out of range.</exception>
-    /// <exception cref="InvalidOperationException">Thrown if the value at the index is not an <see cref="int"/>.</exception>
-    public int GetInt32(int index)
-    {
-        ref readonly var val = ref GetValue(index);
-        return val.kind == 5 ? val.of.s32 : throw new InvalidOperationException("Value is not an int32");
-    }
-
-    /// <summary>
-    /// Gets the <see cref="uint"/> result at the specified index.
-    /// </summary>
-    /// <param name="index">The zero-based index of the result.</param>
-    /// <returns>The <see cref="uint"/> value at the specified index.</returns>
-    /// <exception cref="ArgumentOutOfRangeException">Thrown if the index is out of range.</exception>
-    /// <exception cref="InvalidOperationException">Thrown if the value at the index is not a <see cref="uint"/>.</exception>
-    public uint GetUInt32(int index)
-    {
-        var val = _result?.Array[index] ?? _val[index];
-        return val.kind == 6 ? val.of.u32 : throw new InvalidOperationException("Value is not a uint32");
-    }
-
-    /// <summary>
-    /// Gets the <see cref="long"/> result at the specified index.
-    /// </summary>
-    /// <param name="index">The zero-based index of the result.</param>
-    /// <returns>The <see cref="long"/> value at the specified index.</returns>
-    /// <exception cref="ArgumentOutOfRangeException">Thrown if the index is out of range.</exception>
-    /// <exception cref="InvalidOperationException">Thrown if the value at the index is not a <see cref="long"/>.</exception>
-    public long GetInt64(int index)
-    {
-        ref readonly var val = ref GetValue(index);
-        return val.kind == 7 ? val.of.s64 : throw new InvalidOperationException("Value is not an int64");
-    }
-
-    /// <summary>
-    /// Gets the <see cref="ulong"/> result at the specified index.
-    /// </summary>
-    /// <param name="index">The zero-based index of the result.</param>
-    /// <returns>The <see cref="ulong"/> value at the specified index.</returns>
-    /// <exception cref="ArgumentOutOfRangeException">Thrown if the index is out of range.</exception>
-    /// <exception cref="InvalidOperationException">Thrown if the value at the index is not a <see cref="ulong"/>.</exception>
-    public ulong GetUInt64(int index)
-    {
-        ref readonly var val = ref GetValue(index);
-        return val.kind == 8 ? val.of.u64 : throw new InvalidOperationException("Value is not a uint64");
-    }
-
-    /// <summary>
-    /// Gets the <see cref="float"/> result at the specified index.
-    /// </summary>
-    /// <param name="index">The zero-based index of the result.</param>
-    /// <returns>The <see cref="float"/> value at the specified index.</returns>
-    /// <exception cref="ArgumentOutOfRangeException">Thrown if the index is out of range.</exception>
-    /// <exception cref="InvalidOperationException">Thrown if the value at the index is not a <see cref="float"/>.</exception>
-    public float GetFloat(int index)
-    {
-        ref readonly var val = ref GetValue(index);
-        return val.kind == 9 ? val.of.f32 : throw new InvalidOperationException("Value is not a float");
-    }
-
-    /// <summary>
-    /// Gets the <see cref="double"/> result at the specified index.
-    /// </summary>
-    /// <param name="index">The zero-based index of the result.</param>
-    /// <returns>The <see cref="double"/> value at the specified index.</returns>
-    /// <exception cref="ArgumentOutOfRangeException">Thrown if the index is out of range.</exception>
-    /// <exception cref="InvalidOperationException">Thrown if the value at the index is not a <see cref="double"/>.</exception>
-    public double GetDouble(int index)
-    {
-        ref readonly var val = ref GetValue(index);
-        return val.kind == 10 ? val.of.f64 : throw new InvalidOperationException("Value is not a double");
-    }
-
-    /// <summary>
-    /// Gets the <see cref="char"/> result at the specified index.
-    /// </summary>
-    /// <param name="index">The zero-based index of the result.</param>
-    /// <returns>The <see cref="char"/> value at the specified index.</returns>
-    /// <exception cref="ArgumentOutOfRangeException">Thrown if the index is out of range.</exception>
-    /// <exception cref="InvalidOperationException">Thrown if the value at the index is not a <see cref="char"/>.</exception>
-    public char GetChar(int index)
-    {
-        ref readonly var val = ref GetValue(index);
-        return val.kind == 11 ? (char)val.of.character : throw new InvalidOperationException("Value is not a char");
-    }
-
-    /// <summary>
-    /// Gets the <see cref="string"/> result at the specified index.
-    /// </summary>
-    /// <param name="index">The zero-based index of the result.</param>
-    /// <returns>The <see cref="string"/> value at the specified index.</returns>
-    /// <exception cref="ArgumentOutOfRangeException">Thrown if the index is out of range.</exception>
-    /// <exception cref="InvalidOperationException">Thrown if the value at the index is not a <see cref="string"/>.</exception>
-    public string GetString(int index)
-    {
-        ref readonly var val = ref GetValue(index);
-        return val.kind == 12 ? new ByteVector(val.of.@string).GetString() : throw new InvalidOperationException("Value is not a string");
-    }
-
-    /// <summary>
-    /// Gets the <see cref="ListBuilder"/> result at the specified index.
-    /// </summary>
-    /// <param name="index">The zero-based index of the result.</param>
-    /// <returns>The <see cref="ListBuilder"/> value at the specified index.</returns>
-    /// <exception cref="ArgumentOutOfRangeException">Thrown if the index is out of range.</exception>
-    /// <exception cref="InvalidOperationException">Thrown if the value at the index is not a <see cref="RecordBuilder"/>.</exception>
-    public ListBuilder GetListBuilder(int index)
-    {
-        ref readonly var val = ref GetValue(index);
-        return val.kind == 13 ? new ListBuilder(val.of.list) : throw new InvalidOperationException("Value is not a record");
-    }
-
-    /// <summary>
-    /// Gets the <see cref="RecordBuilder"/> result at the specified index.
-    /// </summary>
-    /// <param name="index">The zero-based index of the result.</param>
-    /// <returns>The <see cref="RecordBuilder"/> value at the specified index.</returns>
-    /// <exception cref="ArgumentOutOfRangeException">Thrown if the index is out of range.</exception>
-    /// <exception cref="InvalidOperationException">Thrown if the value at the index is not a <see cref="RecordBuilder"/>.</exception>
-    public RecordBuilder GetRecordBuilder(int index)
-    {
-        ref readonly var val = ref GetValue(index);
-        return val.kind == 14 ? new RecordBuilder(val.of.record) : throw new InvalidOperationException("Value is not a record");
-    }
-
-    /// <summary>
-    /// Gets the enum result at the specified index.
-    /// </summary>
-    /// <param name="index">The zero-based index of the result.</param>
-    /// <param name="toEnum">A pointer to a function that converts a <see cref="ByteVector"/> to the enum type.</param>
-    /// <returns>The <see cref="RecordBuilder"/> value at the specified index.</returns>
-    /// <exception cref="ArgumentOutOfRangeException">Thrown if the index is out of range.</exception>
-    /// <exception cref="InvalidOperationException">Thrown if the value at the index is not a <see cref="RecordBuilder"/>.</exception>
-    public T GetEnum<T>(int index, delegate* managed<ByteVector, T> toEnum)
-    {
-        ref readonly var val = ref GetValue(index);
-        return val.kind == 17 ? toEnum(new ByteVector(val.of.enumeration)) : throw new InvalidOperationException("Value is not an enum");
+            if (_result == null) return ref _val[index];
+            return ref _result.Array[index];
+        }
     }
 
     /// <summary>
@@ -265,24 +67,5 @@ public readonly unsafe ref struct ComponentCallResults : IDisposable
         _semaphore?.Release();
     }
 
-    private ref readonly wasmtime_component_val GetValue(
-        int index,
-        [CallerMemberName] string memberName = "",
-        [CallerFilePath] string filePath = "",
-        [CallerLineNumber] int lineNumber = 0
-    )
-    {
-        if (index < 0 || index >= Length)
-            ThrowOutOfRange(memberName, filePath, lineNumber);
-
-        if (_result == null)
-            return ref _val[index];
-        return ref _result.Array[index];
-    }
-
-    private static void ThrowOutOfRange(
-        string memberName,
-        string filePath,
-        int lineNumber
-    ) => throw new ArgumentOutOfRangeException(string.Format("{0} is out of rage in {1} at {2}:{3}", nameof(memberName), memberName, filePath, lineNumber));
+    private static void ThrowOutOfRange() => throw new ArgumentOutOfRangeException();
 }

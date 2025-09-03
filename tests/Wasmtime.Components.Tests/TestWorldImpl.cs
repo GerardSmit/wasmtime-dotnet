@@ -68,6 +68,16 @@ public sealed class TestWorldImpl : ITestWorld
         return statuses;
     }
 
+    public static Permission ReturnPermission(Permission permission)
+    {
+        return permission;
+    }
+
+    public static List<Permission> ReturnPermissionList(List<Permission> permissions)
+    {
+        return permissions;
+    }
+
     private static bool _flag;
 
     public static void SetFlag(bool flag)

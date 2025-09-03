@@ -137,7 +137,7 @@ public class ComponentSourceGenerator() : IncrementalGenerator("ComponentSourceG
                     }
                 }
 
-                if (item is WitEnum @enum)
+                if (item is WitEnumBase @enum)
                 {
                     foreach (var value in @enum.Values)
                     {
@@ -475,7 +475,7 @@ public class ComponentSourceGenerator() : IncrementalGenerator("ComponentSourceG
     {
         foreach (var item in valueItems)
         {
-            if (item is WitWorldExport or WitUse or WitWorldImport)
+            if (item is WitWorldExport or WitUse or WitWorldImport or WitTypeAlias)
             {
                 // Ignore world exports: they are handled in 'GenerateWitAccessor'.
                 continue;
@@ -490,7 +490,7 @@ public class ComponentSourceGenerator() : IncrementalGenerator("ComponentSourceG
             {
                 WriteInterface(sb, interf, resolver);
             }
-            else if (item is WitEnum @enum)
+            else if (item is WitEnumBase @enum)
             {
                 WriteEnum(sb, @enum);
             }
@@ -509,19 +509,37 @@ public class ComponentSourceGenerator() : IncrementalGenerator("ComponentSourceG
         }
     }
 
-    private static void WriteEnum(IndentedStringBuilder sb, WitEnum @enum)
+    private static void WriteEnum(IndentedStringBuilder sb, WitEnumBase @enum)
     {
         var name = GetName(@enum.Name);
+        var isFlags = @enum is WitFlags;
+
+        if (isFlags)
+        {
+            sb.Append("[System.Flags]");
+            sb.AppendLine();
+        }
 
         sb.Append("public enum ").AppendLine(name);
         sb.Append("{");
         sb.IncrementIndent();
 
+        var value = isFlags ? 1 : 0;
+
         for (var i = 0; i < @enum.Values.Length; i++)
         {
-            sb.AppendLine(i > 0 ? "," : "");
             var c = @enum.Values[i];
-            sb.Append(GetName(c)).Append(" = ").Append(i);
+            sb.AppendLine(i > 0 ? "," : "");
+            sb.Append(GetName(c)).Append(" = ").Append(value);
+
+            if (!isFlags)
+            {
+                value++;
+            }
+            else
+            {
+                value <<= 1;
+            }
         }
 
         sb.DecrementIndent();
@@ -574,6 +592,50 @@ public class ComponentSourceGenerator() : IncrementalGenerator("ComponentSourceG
         sb.AppendLine("}");
         sb.DecrementIndent();
         sb.AppendLine("}");
+
+        if (isFlags)
+        {
+            sb.AppendLine();
+
+            // Expand(T, Span<T>) -> Int32
+            sb.Append("public static int Expand(").Append(name).Append(" value, global::System.Span<").Append(name).AppendLine("> results)");
+            sb.AppendLine("{");
+            sb.IncrementIndent();
+
+            sb.AppendLine("int index = 0;");
+            sb.AppendLine();
+            for (var i = 0; i < @enum.Values.Length; i++)
+            {
+                var c = @enum.Values[i];
+
+                sb.Append("if ((value & ").Append(name).Append('.').Append(GetName(c)).Append(") != 0) ");
+                sb.Append("results[index++] = ").Append(name).Append('.').Append(GetName(c)).AppendLine(";");
+            }
+
+            sb.AppendLine();
+            sb.AppendLine("return index;");
+
+            sb.DecrementIndent();
+            sb.AppendLine("}");
+
+            // Combine(ReadOnlySpan<T>) -> T
+            sb.AppendLine();
+            sb.Append("public static ").Append(name).Append(" Combine(global::System.ReadOnlySpan<").Append(name).AppendLine("> values)");
+            sb.AppendLine("{");
+            sb.IncrementIndent();
+            sb.Append(name).AppendLine(" result = default;");
+            sb.AppendLine();
+            sb.AppendLine("foreach (var value in values)");
+            sb.AppendLine("{");
+            sb.IncrementIndent();
+            sb.AppendLine("result |= value;");
+            sb.DecrementIndent();
+            sb.AppendLine("}");
+            sb.AppendLine();
+            sb.AppendLine("return result;");
+            sb.DecrementIndent();
+            sb.AppendLine("}");
+        }
 
         sb.DecrementIndent();
         sb.AppendLine("}");

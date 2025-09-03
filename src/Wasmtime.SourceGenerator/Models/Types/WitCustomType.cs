@@ -110,11 +110,6 @@ public record WitCustomType : WitType
         Resolve(resolver).WriteParameterSetter(sb, parametersVariable, name, startIndex, ignoreDispose, resolver);
     }
 
-    public override string GetCSharpType(ITypeContainerResolver resolver)
-    {
-        return Resolve(resolver).GetCSharpType(resolver);
-    }
-
     public override void WriteBytes(IndentedStringBuilder sb, string name, string span, ITypeContainerResolver resolver)
     {
         Resolve(resolver).WriteBytes(sb, name, span, resolver);

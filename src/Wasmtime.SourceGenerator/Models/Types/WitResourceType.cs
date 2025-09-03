@@ -23,12 +23,4 @@ public record WitResourceType(
         WriteCSharpType(sb, resolver);
         sb.Append(">()");
     }
-
-    /// <inheritdoc />
-    public override void WriteResultGetter(IndentedStringBuilder sb, string paramName, int index, ITypeContainerResolver resolver)
-    {
-        sb.Append(paramName).Append(".GetResource<");
-        WriteCSharpType(sb, resolver);
-        sb.Append(">(").Append(index).Append(')');
-    }
 }

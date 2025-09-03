@@ -10,5 +10,11 @@ package tests:common@0.1.0 {
             inactive,
             pending
         }
+
+        flags permission {
+            read,
+            write,
+            execute
+        }
     }
 }

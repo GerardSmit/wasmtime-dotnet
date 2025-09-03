@@ -369,6 +369,7 @@ public class Wit
         if (context.flags() is { } flagsContext)
         {
             return new WitFlags(
+                packageName.Value,
                 flagsContext.identifier().GetTextWithoutEscape(),
                 flagsContext.flagsItem().Select(x => x.identifier().GetTextWithoutEscape()).ToArray()
             );

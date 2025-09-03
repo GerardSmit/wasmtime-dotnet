@@ -205,10 +205,38 @@ public class ComponentCallTypeTest(ComponentFixture fixture)
     }
 
     [Fact]
+    public void List_Flags()
+    {
+        using var state = fixture.CreateState();
+
+        var result = state.Exports.ReturnPermissionList([Permission.Read | Permission.Write, Permission.Execute]);
+
+        Assert.Equal([Permission.Read | Permission.Write, Permission.Execute], result);
+    }
+
+    [Fact]
     public void Enum()
     {
         using var state = fixture.CreateState();
 
         Assert.Equal(Status.Active, state.Exports.ReturnStatus(Status.Active));
+    }
+
+    [Fact]
+    public void Flags_Single()
+    {
+        using var state = fixture.CreateState();
+
+        Assert.Equal(Permission.Read, state.Exports.ReturnPermission(Permission.Read));
+    }
+
+    [Fact]
+    public void Flags_Combined()
+    {
+        using var state = fixture.CreateState();
+
+        const Permission permission = Permission.Read | Permission.Write;
+
+        Assert.Equal(permission, state.Exports.ReturnPermission(permission));
     }
 }

@@ -55,44 +55,40 @@ public record WitTypeDefinitions(EquatableArray<WitTypeDef> Items)
 
         foreach (var item in items)
         {
-            if (item is WitRecord record)
+            switch (item)
             {
-                dict[record.Name] = record.Type;
-            }
-
-            if (item is WitInterface interf)
-            {
-                dict[interf.Name] = interf.Type;
-            }
-
-            if (item is WitUse use)
-            {
-                var container = new WitCustomType(use.Package, use.Interface);
-
-                foreach (var (name, alias) in use.Items)
+                case WitRecord record:
+                    dict[record.Name] = record.Type;
+                    break;
+                case WitInterface interf:
+                    dict[interf.Name] = interf.Type;
+                    break;
+                case WitEnum @enum:
+                    dict[@enum.Name] = @enum.Type;
+                    break;
+                case WitFlags flags:
+                    dict[flags.Name] = flags.Type;
+                    break;
+                case WitTypeAlias typeAlias:
+                    dict[typeAlias.Name] = typeAlias.Type;
+                    break;
+                case WitVariant variant:
+                    dict[variant.Name] = variant.Type;
+                    break;
+                case WitResource resource:
+                    dict[resource.Name] = resource.Type;
+                    break;
+                case WitUse use:
                 {
-                    dict[alias] = new WitAliasType(container, name);
+                    var container = new WitCustomType(use.Package, use.Interface);
+
+                    foreach (var (name, alias) in use.Items)
+                    {
+                        dict[alias] = new WitAliasType(container, name);
+                    }
+
+                    break;
                 }
-            }
-
-            if (item is WitEnum @enum)
-            {
-                dict[@enum.Name] = @enum.Type;
-            }
-
-            if (item is WitTypeAlias typeAlias)
-            {
-                dict[typeAlias.Name] = typeAlias.Type;
-            }
-
-            if (item is WitVariant variant)
-            {
-                dict[variant.Name] = variant.Type;
-            }
-
-            if (item is WitResource resource)
-            {
-                dict[resource.Name] = resource.Type;
             }
         }
 

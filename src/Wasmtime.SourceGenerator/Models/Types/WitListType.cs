@@ -19,12 +19,6 @@ public record WitListType(
     }
 
     /// <inheritdoc />
-    public override string GetCSharpType(ITypeContainerResolver resolver)
-    {
-        return ElementType.GetCSharpType(resolver) + "[]";
-    }
-
-    /// <inheritdoc />
     public override void WriteCSharpType(IndentedStringBuilder sb, ITypeContainerResolver resolver)
     {
         ElementType.WriteCSharpType(sb, resolver);
@@ -65,8 +59,7 @@ public record WitListType(
     }
 
     /// <inheritdoc />
-    public override void WriteParameterSetter(IndentedStringBuilder sb, string parametersVariable, string name,
-        int startIndex, bool ignoreDispose, ITypeContainerResolver resolver)
+    public override void WriteParameterSetter(IndentedStringBuilder sb, string parametersVariable, string name, int startIndex, bool ignoreDispose, ITypeContainerResolver resolver)
     {
         sb.Append(parametersVariable).Append("[").Append(startIndex).Append("] = global::Wasmtime.ComponentValue.CreateList(builder_").Append(name.ToSafeVariable()).AppendLine(");");
     }
@@ -86,9 +79,28 @@ public record WitListType(
 
         sb.AppendLine("// Convert list builder to array");
         sb.Append("global::Wasmtime.ListBuilder ").Append(builderName).Append(" = ")
-            .Append(paramName).Append(".GetListBuilder(").Append(index).AppendLine(");");
+            .Append(paramName).Append("[").Append(index).AppendLine("].ToListBuilder();");
 
         WriteToArray(sb, resolver, parameterName, builderName, indexName);
+    }
+
+    /// <inheritdoc />
+    public override void WriteResultGetter(IndentedStringBuilder sb, string paramName, int index, ITypeContainerResolver resolver)
+    {
+        sb.Append(paramName).Append('_').Append(index);
+    }
+
+    public override void WriteValueGetterInitializer(IndentedStringBuilder sb, string paramName, string uniqueName, ITypeContainerResolver resolver)
+    {
+        sb.Append("global::Wasmtime.ListBuilder builder_").Append(uniqueName).Append(" = ").Append(paramName).Append(".ToListBuilder();").AppendLine();
+
+        WriteToArray(sb, resolver, uniqueName, "builder_" + uniqueName, "i");
+    }
+
+    /// <inheritdoc />
+    public override void WriteValueGetter(IndentedStringBuilder sb, string paramName, string uniqueName, ITypeContainerResolver resolver)
+    {
+        sb.Append(uniqueName);
     }
 
     private void WriteToArray(
@@ -111,24 +123,5 @@ public record WitListType(
         sb.AppendLine(";");
         sb.DecrementIndent();
         sb.AppendLine("}");
-    }
-
-    /// <inheritdoc />
-    public override void WriteResultGetter(IndentedStringBuilder sb, string paramName, int index, ITypeContainerResolver resolver)
-    {
-        sb.Append(paramName).Append('_').Append(index);
-    }
-
-    public override void WriteValueGetterInitializer(IndentedStringBuilder sb, string paramName, string uniqueName, ITypeContainerResolver resolver)
-    {
-        sb.Append("global::Wasmtime.ListBuilder builder_").Append(uniqueName).Append(" = ").Append(paramName).Append(".ToListBuilder();").AppendLine();
-
-        WriteToArray(sb, resolver, uniqueName, "builder_" + uniqueName, "i");
-    }
-
-    /// <inheritdoc />
-    public override void WriteValueGetter(IndentedStringBuilder sb, string paramName, string uniqueName, ITypeContainerResolver resolver)
-    {
-        sb.Append(uniqueName);
     }
 }

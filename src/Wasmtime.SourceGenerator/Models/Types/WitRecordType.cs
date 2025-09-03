@@ -27,13 +27,6 @@ public record WitRecordType(WitPackageNameVersion Package, string Name, Equatabl
         WriteCSharpType(sb, resolver);
         sb.Append(".FromRecordBuilder(").Append(paramName).Append(".ToRecordBuilder())");
     }
-
-    /// <inheritdoc />
-    public override void WriteResultGetter(IndentedStringBuilder sb, string paramName, int index, ITypeContainerResolver resolver)
-    {
-        WriteCSharpType(sb, resolver);
-        sb.Append(".FromRecordBuilder(").Append(paramName).Append(".GetRecordBuilder(").Append(index).Append("))");
-    }
 }
 
 /// <summary>

@@ -28,7 +28,7 @@ public class ComponentCallTest(ComponentFixture fixture)
         using var a = ComponentValue.CreateString("uppercase");
         using var results = state.Instance.CallUnsafe(function, 1, [a]);
 
-        Assert.Equal("UPPERCASE", results.GetString(0));
+        Assert.Equal("UPPERCASE", results[0].ToStringValue());
     }
 
     [Fact]
@@ -63,7 +63,7 @@ public class ComponentCallTest(ComponentFixture fixture)
         {
             using var a = ComponentValue.CreateString("uppercase");
             using var results = state.Instance.CallUnsafe(function, 1, [a]);
-            results.GetString(-1);
+            results[-1].ToStringValue();
         });
     }
 

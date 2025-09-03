@@ -9,13 +9,13 @@ internal unsafe class ComponentCallResultsInternal : IDisposable
 
     internal static ComponentCallResultsInternal ThreadInstance => _cachedInstance ??= new ComponentCallResultsInternal();
 
-    public readonly wasmtime_component_val[] Array;
+    public readonly ComponentValue[] Array;
     private wasmtime_component_func _func;
     private wasmtime_context* _context;
 
     internal ComponentCallResultsInternal()
     {
-        Array = new wasmtime_component_val[16];
+        Array = new ComponentValue[16];
     }
 
     public int Length { get; private set; }
@@ -39,8 +39,10 @@ internal unsafe class ComponentCallResultsInternal : IDisposable
             wasmtime_component_func_post_return(ptr, _context);
         }
 
-        fixed (wasmtime_component_val* ptr = Array)
+        fixed (ComponentValue* ptrValue = Array)
         {
+            var ptr = (wasmtime_component_val*)ptrValue;
+
             for (var i = 0; i < Length; i++)
             {
                 ComponentValue.Dispose(ref ptr[i]);
