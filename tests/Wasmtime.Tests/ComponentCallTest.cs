@@ -53,6 +53,21 @@ public class ComponentCallTest
             static s => Assert.Equal("UPPERCASE", s.Uppercase("uppercase")));
     }
 
+    [Fact]
+    public void GetFunction_CallUnsafe_InvalidIndex()
+    {
+        using var state = new ComponentState();
+
+        var function = state.Instance.GetFunction("uppercase");
+
+        Assert.Throws<ArgumentOutOfRangeException>(() =>
+        {
+            using var a = ComponentValue.CreateString("uppercase");
+            using var results = state.Instance.CallUnsafe(function, 1, [a]);
+            results.GetString(-1);
+        });
+    }
+
     private static async Task ExecuteConcurrent<TState>(Func<TState> createState, Action<TState> action)
     {
         var cpuCount = Environment.ProcessorCount;

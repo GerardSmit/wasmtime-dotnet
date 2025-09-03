@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Runtime.CompilerServices;
 using System.Threading;
 using Wasmtime.Interop;
 
@@ -55,8 +56,7 @@ public readonly unsafe ref struct ComponentCallResults : IDisposable
     /// <exception cref="InvalidOperationException">Thrown if the value at the index is not a <see cref="bool"/>.</exception>
     public bool GetBoolean(int index)
     {
-        if (index < 0 || index >= Length) throw new ArgumentOutOfRangeException(nameof(index));
-        var val = _result?.Array[index] ?? _val[index];
+        ref readonly var val = ref GetValue(index);
         return val.kind == 0 ? (val.of.boolean != 0) : throw new InvalidOperationException("Value is not a boolean");
     }
 
@@ -69,8 +69,7 @@ public readonly unsafe ref struct ComponentCallResults : IDisposable
     /// <exception cref="InvalidOperationException">Thrown if the value at the index is not an <see cref="sbyte"/>.</exception>
     public sbyte GetSByte(int index)
     {
-        if (index < 0 || index >= Length) throw new ArgumentOutOfRangeException(nameof(index));
-        var val = _result?.Array[index] ?? _val[index];
+        ref readonly var val = ref GetValue(index);
         return val.kind == 1 ? val.of.s8 : throw new InvalidOperationException("Value is not an sbyte");
     }
 
@@ -83,8 +82,7 @@ public readonly unsafe ref struct ComponentCallResults : IDisposable
     /// <exception cref="InvalidOperationException">Thrown if the value at the index is not a <see cref="byte"/>.</exception>
     public byte GetByte(int index)
     {
-        if (index < 0 || index >= Length) throw new ArgumentOutOfRangeException(nameof(index));
-        var val = _result?.Array[index] ?? _val[index];
+        ref readonly var val = ref GetValue(index);
         return val.kind == 2 ? val.of.u8 : throw new InvalidOperationException("Value is not a byte");
     }
 
@@ -97,8 +95,7 @@ public readonly unsafe ref struct ComponentCallResults : IDisposable
     /// <exception cref="InvalidOperationException">Thrown if the value at the index is not a <see cref="short"/>.</exception>
     public short GetInt16(int index)
     {
-        if (index < 0 || index >= Length) throw new ArgumentOutOfRangeException(nameof(index));
-        var val = _result?.Array[index] ?? _val[index];
+        ref readonly var val = ref GetValue(index);
         return val.kind == 3 ? val.of.s16 : throw new InvalidOperationException("Value is not an int16");
     }
 
@@ -111,8 +108,7 @@ public readonly unsafe ref struct ComponentCallResults : IDisposable
     /// <exception cref="InvalidOperationException">Thrown if the value at the index is not a <see cref="ushort"/>.</exception>
     public ushort GetUInt16(int index)
     {
-        if (index < 0 || index >= Length) throw new ArgumentOutOfRangeException(nameof(index));
-        var val = _result?.Array[index] ?? _val[index];
+        ref readonly var val = ref GetValue(index);
         return val.kind == 4 ? val.of.u16 : throw new InvalidOperationException("Value is not a uint16");
     }
 
@@ -125,8 +121,7 @@ public readonly unsafe ref struct ComponentCallResults : IDisposable
     /// <exception cref="InvalidOperationException">Thrown if the value at the index is not an <see cref="int"/>.</exception>
     public int GetInt32(int index)
     {
-        if (index < 0 || index >= Length) throw new ArgumentOutOfRangeException(nameof(index));
-        var val = _result?.Array[index] ?? _val[index];
+        ref readonly var val = ref GetValue(index);
         return val.kind == 5 ? val.of.s32 : throw new InvalidOperationException("Value is not an int32");
     }
 
@@ -152,8 +147,7 @@ public readonly unsafe ref struct ComponentCallResults : IDisposable
     /// <exception cref="InvalidOperationException">Thrown if the value at the index is not a <see cref="long"/>.</exception>
     public long GetInt64(int index)
     {
-        if (index < 0 || index >= Length) throw new ArgumentOutOfRangeException(nameof(index));
-        var val = _result?.Array[index] ?? _val[index];
+        ref readonly var val = ref GetValue(index);
         return val.kind == 7 ? val.of.s64 : throw new InvalidOperationException("Value is not an int64");
     }
 
@@ -166,8 +160,7 @@ public readonly unsafe ref struct ComponentCallResults : IDisposable
     /// <exception cref="InvalidOperationException">Thrown if the value at the index is not a <see cref="ulong"/>.</exception>
     public ulong GetUInt64(int index)
     {
-        if (index < 0 || index >= Length) throw new ArgumentOutOfRangeException(nameof(index));
-        var val = _result?.Array[index] ?? _val[index];
+        ref readonly var val = ref GetValue(index);
         return val.kind == 8 ? val.of.u64 : throw new InvalidOperationException("Value is not a uint64");
     }
 
@@ -180,8 +173,7 @@ public readonly unsafe ref struct ComponentCallResults : IDisposable
     /// <exception cref="InvalidOperationException">Thrown if the value at the index is not a <see cref="float"/>.</exception>
     public float GetFloat(int index)
     {
-        if (index < 0 || index >= Length) throw new ArgumentOutOfRangeException(nameof(index));
-        var val = _result?.Array[index] ?? _val[index];
+        ref readonly var val = ref GetValue(index);
         return val.kind == 9 ? val.of.f32 : throw new InvalidOperationException("Value is not a float");
     }
 
@@ -194,8 +186,7 @@ public readonly unsafe ref struct ComponentCallResults : IDisposable
     /// <exception cref="InvalidOperationException">Thrown if the value at the index is not a <see cref="double"/>.</exception>
     public double GetDouble(int index)
     {
-        if (index < 0 || index >= Length) throw new ArgumentOutOfRangeException(nameof(index));
-        var val = _result?.Array[index] ?? _val[index];
+        ref readonly var val = ref GetValue(index);
         return val.kind == 10 ? val.of.f64 : throw new InvalidOperationException("Value is not a double");
     }
 
@@ -208,8 +199,7 @@ public readonly unsafe ref struct ComponentCallResults : IDisposable
     /// <exception cref="InvalidOperationException">Thrown if the value at the index is not a <see cref="char"/>.</exception>
     public char GetChar(int index)
     {
-        if (index < 0 || index >= Length) throw new ArgumentOutOfRangeException(nameof(index));
-        var val = _result?.Array[index] ?? _val[index];
+        ref readonly var val = ref GetValue(index);
         return val.kind == 11 ? (char)val.of.character : throw new InvalidOperationException("Value is not a char");
     }
 
@@ -222,9 +212,8 @@ public readonly unsafe ref struct ComponentCallResults : IDisposable
     /// <exception cref="InvalidOperationException">Thrown if the value at the index is not a <see cref="string"/>.</exception>
     public unsafe string GetString(int index)
     {
-        if (index < 0 || index >= Length) throw new ArgumentOutOfRangeException(nameof(index));
-        var val = _result?.Array[index] ?? _val[index];
-        return val.kind == 12 ? new ByteVector(&val.of.@string).GetString() : throw new InvalidOperationException("Value is not a string");
+        ref readonly var val = ref GetValue(index);
+        return val.kind == 12 ? new ByteVector(val.of.@string).GetString() : throw new InvalidOperationException("Value is not a string");
     }
 
     /// <summary>
@@ -250,8 +239,7 @@ public readonly unsafe ref struct ComponentCallResults : IDisposable
     /// <exception cref="InvalidOperationException">Thrown if the value at the index is not a <see cref="RecordBuilder"/>.</exception>
     public RecordBuilder GetRecordBuilder(int index)
     {
-        if (index < 0 || index >= Length) throw new ArgumentOutOfRangeException(nameof(index));
-        var val = _result?.Array[index] ?? _val[index];
+        ref readonly var val = ref GetValue(index);
         return val.kind == 14 ? new RecordBuilder(val.of.record) : throw new InvalidOperationException("Value is not a record");
     }
 
@@ -278,4 +266,25 @@ public readonly unsafe ref struct ComponentCallResults : IDisposable
         _result?.Dispose();
         _semaphore?.Release();
     }
+
+    private ref readonly wasmtime_component_val GetValue(
+        int index,
+        [CallerMemberName] string memberName = "",
+        [CallerFilePath] string filePath = "",
+        [CallerLineNumber] int lineNumber = 0
+    )
+    {
+        if (index < 0 || index >= Length)
+            ThrowOutOfRange(memberName, filePath, lineNumber);
+
+        if (_result == null)
+            return ref _val[index];
+        return ref _result.Array[index];
+    }
+
+    private static void ThrowOutOfRange(
+        string memberName,
+        string filePath,
+        int lineNumber
+    ) => throw new ArgumentOutOfRangeException(string.Format("{0} is out of rage in {1} at {2}:{3}", nameof(memberName), memberName, filePath, lineNumber));
 }
