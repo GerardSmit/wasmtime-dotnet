@@ -50,7 +50,7 @@ public sealed unsafe class Linker : IDisposable
         {
             var length = Encoding.UTF8.GetBytes(utf16, name.Length, utf8, bytes.Length);
 
-            wasmtime_component_linker_instance_add_func(
+            var error = wasmtime_component_linker_instance_add_func(
                 root,
                 utf8,
                 (nuint)length,
@@ -58,6 +58,8 @@ public sealed unsafe class Linker : IDisposable
                 (void*)data,
                 IntPtr.Zero
             );
+
+            WasmtimeException.ThrowIfError(error);
         }
     }
 
