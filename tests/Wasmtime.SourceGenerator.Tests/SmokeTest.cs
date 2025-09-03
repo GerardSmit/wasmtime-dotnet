@@ -31,11 +31,11 @@ public class SmokeTest(ITestOutputHelper output)
             .SelectMany(d => d.Value.Packages)
             .Select(p => p.Value);
 
-        var solutionResolver = new SolutionTypeContainerResolver(allPackages);
+        var projectResolver = new ProjectTypeContainerResolver(allPackages);
 
-        foreach (var kv in solutionResolver.Packages)
+        foreach (var kv in projectResolver.Packages)
         {
-            var (_, content) = ComponentSourceGenerator.GenerateWitAccessor(kv, solutionResolver);
+            var (_, content) = ComponentSourceGenerator.GenerateWitAccessor(kv, projectResolver);
             Assert.NotEmpty(content);
 
             output.WriteLine($"--- {kv.Key} ---");

@@ -193,13 +193,13 @@ public class ComponentSourceGenerator() : IncrementalGenerator("ComponentSourceG
         SgfSourceProductionContext ctx,
         ImmutableArray<KeyValuePair<WitPackageName, WitPackage>> packages)
     {
-        var solutionTypeResolver = new SolutionTypeContainerResolver(packages.Select(x => x.Value));
+        var projectTypeResolver = new ProjectTypeContainerResolver(packages.Select(x => x.Value));
 
-        foreach (var kv in solutionTypeResolver.Packages)
+        foreach (var kv in projectTypeResolver.Packages)
         {
             try
             {
-                var (name, content) = GenerateWitAccessor(kv, solutionTypeResolver);
+                var (name, content) = GenerateWitAccessor(kv, projectTypeResolver);
 
                 ctx.AddSource(name, content);
             }
@@ -218,7 +218,7 @@ public class ComponentSourceGenerator() : IncrementalGenerator("ComponentSourceG
     /// Generates the C# accessor for a WIT package.
     /// </summary>
     /// <param name="package">The WIT package to generate the accessor for.</param>
-    public static (string Path, string Content) GenerateWitAccessor(KeyValuePair<WitPackageName, WitPackage> package, SolutionTypeContainerResolver solutionResolver)
+    public static (string Path, string Content) GenerateWitAccessor(KeyValuePair<WitPackageName, WitPackage> package, ProjectTypeContainerResolver projectResolver)
     {
         var nameBuilder = _stringBuilder ??= new System.Text.StringBuilder(256);
         var sb = _indentedStringBuilder ??= new IndentedStringBuilder();
@@ -273,7 +273,7 @@ public class ComponentSourceGenerator() : IncrementalGenerator("ComponentSourceG
                 sb.AppendLine("{");
                 sb.IncrementIndent();
 
-                WriteItems(sb, world.Value.Definitions.Items, solutionResolver);
+                WriteItems(sb, world.Value.Definitions.Items, projectResolver);
 
                 sb.DecrementIndent();
                 sb.AppendLine("}");
@@ -311,7 +311,7 @@ public class ComponentSourceGenerator() : IncrementalGenerator("ComponentSourceG
 
                     try
                     {
-                        WriteExport(sb, funcType, export, solutionResolver);
+                        WriteExport(sb, funcType, export, projectResolver);
                     }
                     catch (Exception e)
                     {
@@ -344,7 +344,7 @@ public class ComponentSourceGenerator() : IncrementalGenerator("ComponentSourceG
 
                     try
                     {
-                        WriteImport(sb, funcType, import, solutionResolver);
+                        WriteImport(sb, funcType, import, projectResolver);
                         imports.Add(import);
                     }
                     catch (Exception e)
@@ -374,7 +374,7 @@ public class ComponentSourceGenerator() : IncrementalGenerator("ComponentSourceG
                 {
                     try
                     {
-                        WriteImportRegistration(sb, className, (WitFuncType)import.Type, import, solutionResolver);
+                        WriteImportRegistration(sb, className, (WitFuncType)import.Type, import, projectResolver);
                     }
                     catch (Exception e)
                     {
@@ -388,7 +388,7 @@ public class ComponentSourceGenerator() : IncrementalGenerator("ComponentSourceG
             }
         }
 
-        WriteItems(sb, version.Definitions.Items, solutionResolver);
+        WriteItems(sb, version.Definitions.Items, projectResolver);
 
         foreach (var unused in package.Key.AllParts)
         {
