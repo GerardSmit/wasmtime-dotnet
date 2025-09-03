@@ -619,7 +619,7 @@ public class ComponentSourceGenerator() : IncrementalGenerator("ComponentSourceG
         sb.AppendLine();
         sb.AppendLine("{");
         sb.IncrementIndent();
-        sb.Append("var builder = new global::Wasmtime.RecordBuilder(").Append(record.Fields.Length).AppendLine(");");
+        sb.Append("var builder = new global::Wasmtime.RecordBuilder(").Append(record.Fields.Length).AppendLine(", disposeNames: false);");
         sb.AppendLine();
         for (var index = 0; index < record.Fields.Length; index++)
         {

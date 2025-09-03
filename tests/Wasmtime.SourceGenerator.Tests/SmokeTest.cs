@@ -1,7 +1,6 @@
 ﻿using System.IO;
 using System.Linq;
 using Wasmtime.SourceGenerator.Models;
-using Xunit.Abstractions;
 
 namespace Wasmtime.SourceGenerator.Tests;
 

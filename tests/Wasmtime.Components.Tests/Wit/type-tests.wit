@@ -15,4 +15,5 @@ world type-tests {
     export uppercase: func(s: string) -> string;
     export multiply-list: func(%list: list<u32>, factor: u32) -> list<u32>;
     export return-status: func(status: status) -> status;
+    export return-status-list: func(statuses: list<status>) -> list<status>;
 }

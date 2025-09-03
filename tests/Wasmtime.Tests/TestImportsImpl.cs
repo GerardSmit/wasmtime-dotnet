@@ -2,16 +2,17 @@
 
 internal class TestImportsImpl : Wit.Tests.Component.TestImports
 {
-    public bool WasCalled { get; private set; }
+    public bool CallbackWasCalled { get; private set; }
+    public bool CallbackCombineStringWasCalled { get; private set; }
 
     public override void Callback()
     {
-        WasCalled = true;
+        CallbackWasCalled = true;
     }
 
     public override string CallbackCombineString(string s1, string s2)
     {
-        WasCalled = true;
+        CallbackCombineStringWasCalled = true;
         return s1 + s2;
     }
 }

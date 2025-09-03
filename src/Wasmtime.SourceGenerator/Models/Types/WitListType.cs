@@ -51,7 +51,7 @@ public record WitListType(
         }
 
         sb.Append("global::Wasmtime.ListBuilder ").Append(builderName).Append(" = new global::Wasmtime.ListBuilder(").Append(name).AppendLine(".Length);");
-        sb.Append("for (var ").Append(indexName).Append(" = 0; ").Append(indexName).Append(" < ").Append(builderName).Append(".Length; ").Append(indexName).AppendLine("++)");
+        sb.Append("for (int ").Append(indexName).Append(" = 0; ").Append(indexName).Append(" < ").Append(name).Append(".Length; ").Append(indexName).AppendLine("++)");
         sb.AppendLine("{");
         sb.IncrementIndent();
         ElementType.WriteParameterInitializer(sb, itemName, resolver, ignoreDispose: true, isMemoryInitializer);
@@ -103,7 +103,7 @@ public record WitListType(
         ElementType.WriteCSharpType(sb, resolver);
         sb.Append("[").Append(builderName).AppendLine(".Length];");
 
-        sb.Append("for (var ").Append(indexName).Append(" = 0; ").Append(indexName).Append(" < ").Append(builderName).Append(".Length; ").Append(indexName).AppendLine("++)");
+        sb.Append("for (int ").Append(indexName).Append(" = 0; ").Append(indexName).Append(" < ").Append(parameterName).Append(".Length; ").Append(indexName).AppendLine("++)");
         sb.AppendLine("{");
         sb.IncrementIndent();
         sb.Append(parameterName).Append("[").Append(indexName).Append("] = ");

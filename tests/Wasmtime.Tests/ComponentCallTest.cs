@@ -3,16 +3,15 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Xunit;
-using Xunit.Abstractions;
 
 namespace Wasmtime.Tests;
 
-public class ComponentCallTest
+public class ComponentCallTest(ComponentFixture fixture)
 {
     [Fact]
     public void Dispose_Store()
     {
-        using var state = new ComponentState();
+        using var state = fixture.CreateState();
 
         state.Store.Dispose();
 
@@ -22,7 +21,7 @@ public class ComponentCallTest
     [Fact]
     public void GetFunction_CallUnsafe()
     {
-        using var state = new ComponentState();
+        using var state = fixture.CreateState();
 
         var function = state.Instance.GetFunction("uppercase");
 
@@ -35,7 +34,7 @@ public class ComponentCallTest
     [Fact]
     public void MultipleCalls()
     {
-        using var state = new ComponentState();
+        using var state = fixture.CreateState();
 
         for (var i = 0; i < 10; i++)
         {
@@ -46,7 +45,7 @@ public class ComponentCallTest
     [Fact]
     public async Task ConcurrentCalls_FunctionName()
     {
-        using var state = new ComponentState();
+        using var state = fixture.CreateState();
 
         await ExecuteConcurrent(
             () => state.Exports,
@@ -56,7 +55,7 @@ public class ComponentCallTest
     [Fact]
     public void GetFunction_CallUnsafe_InvalidIndex()
     {
-        using var state = new ComponentState();
+        using var state = fixture.CreateState();
 
         var function = state.Instance.GetFunction("uppercase");
 

@@ -63,6 +63,11 @@ public sealed class TestWorldImpl : ITestWorld
         return status;
     }
 
+    public static List<Status> ReturnStatusList(List<Status> statuses)
+    {
+        return statuses;
+    }
+
     private static bool _flag;
 
     public static void SetFlag(bool flag)

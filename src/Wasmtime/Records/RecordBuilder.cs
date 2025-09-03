@@ -10,14 +10,18 @@ namespace Wasmtime;
 public readonly unsafe ref struct RecordBuilder : IDisposable
 {
     private readonly wasmtime_component_valrecord _source;
+    private readonly bool _disposeNames = false;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="RecordBuilder"/> struct with the specified items and length.
     /// </summary>
     /// <param name="length">The number of items in the record.</param>
+    /// <param name="disposeNames"><c>true</c> to dispose names when the record is disposed; otherwise, <c>false</c>.</param>
     /// <exception cref="ArgumentOutOfRangeException">Thrown when <paramref name="length"/> is less than zero.</exception>
-    public RecordBuilder(int length)
+    public RecordBuilder(int length, bool disposeNames = true)
     {
+        _disposeNames = disposeNames;
+
         fixed (wasmtime_component_valrecord* p = &_source)
         {
             wasmtime_component_valrecord_new_uninit(p, (nuint)length);
@@ -28,9 +32,11 @@ public readonly unsafe ref struct RecordBuilder : IDisposable
     /// Initializes a new instance of the <see cref="RecordBuilder"/> struct with the specified source.
     /// </summary>
     /// <param name="source">The source <see cref="wasmtime_component_valrecord"/> to wrap.</param>
-    internal RecordBuilder(wasmtime_component_valrecord source)
+    /// <param name="disposeNames"><c>true</c> to dispose names when the record is disposed; otherwise, <c>false</c>.</param>
+    internal RecordBuilder(wasmtime_component_valrecord source, bool disposeNames = false)
     {
         _source = source;
+        _disposeNames = disposeNames;
     }
 
     internal wasmtime_component_valrecord Value => _source;
@@ -114,7 +120,13 @@ public readonly unsafe ref struct RecordBuilder : IDisposable
 
         for (var i = 0; i < (int)_source.size; i++)
         {
-            // Names are not disposed since the values are cached and reused (constants).
+            if (_disposeNames)
+            {
+                new ByteVector(data[i].name).Dispose();
+            }
+
+            // 'wasmtime_component_valrecord_delete' will free the names,
+            // since we don't want to dispose them, set the reference to null.
             data[i].name = default;
             ComponentValue.Dispose(ref data[i].val);
         }
