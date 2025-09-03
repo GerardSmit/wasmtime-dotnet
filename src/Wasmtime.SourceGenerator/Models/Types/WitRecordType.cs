@@ -21,13 +21,6 @@ public record WitRecordType(WitPackageNameVersion Package, string Name, Equatabl
         sb.Append("global::Wasmtime.ComponentValue.CreateRecord(").Append(paramKey).Append(".ToRecordBuilder())");
     }
 
-    /// <inheritdoc />
-    public override void WriteParameterSetter(IndentedStringBuilder sb, string parametersVariable, string name,
-        int startIndex, bool ignoreDispose, ITypeContainerResolver resolver)
-    {
-        sb.Append("global::Wasmtime.ComponentValue.CreateRecord(").Append(name).AppendLine(".ToRecordBuilder());");
-    }
-
     public override void WriteValueGetter(IndentedStringBuilder sb, string paramName, string uniqueName,
         ITypeContainerResolver resolver)
     {

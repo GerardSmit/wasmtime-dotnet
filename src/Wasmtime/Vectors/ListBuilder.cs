@@ -56,7 +56,7 @@ public readonly unsafe struct ListBuilder : IDisposable
 
         for (var i = 0; i < (int)_vector.size; i++)
         {
-            ComponentValue.Dispose(_vector.data[i]);
+            ComponentValue.Dispose(ref _vector.data[i]);
         }
 
         fixed (wasmtime_component_vallist* vec = &_vector)

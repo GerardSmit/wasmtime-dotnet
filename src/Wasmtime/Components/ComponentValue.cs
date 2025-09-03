@@ -8,12 +8,12 @@ namespace Wasmtime;
 /// <summary>
 /// Represents a value used in component calls for Wasmtime.
 /// </summary>
-public readonly struct ComponentValue : IDisposable
+public struct ComponentValue : IDisposable
 {
     // ** DO NOT ADD FIELDS TO THIS STRUCTURE. **
     // This struct is a direct mapping to the native wasmtime_component_val structure.
     // Adding fields will change the memory layout and break interop.
-    private readonly wasmtime_component_val _val;
+    private wasmtime_component_val _val;
 
     internal wasmtime_component_val Value => _val;
 
@@ -403,11 +403,16 @@ public readonly struct ComponentValue : IDisposable
     /// <inheritdoc />
     public void Dispose()
     {
-        Dispose(in _val);
+        Dispose(ref _val);
     }
 
-    internal static void Dispose(in wasmtime_component_val val)
+    internal static void Dispose(ref wasmtime_component_val val)
     {
+        if (val.kind == 0)
+        {
+            return;
+        }
+
         if (val.kind == 12)
         {
             new ByteVector(val.of.@string).Dispose();
@@ -427,5 +432,7 @@ public readonly struct ComponentValue : IDisposable
         {
             // Enums are not disposed, since the values are cached and reused (constants).
         }
+
+        val = default;
     }
 }

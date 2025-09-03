@@ -43,9 +43,8 @@ internal unsafe class ComponentCallResultsInternal : IDisposable
         {
             for (var i = 0; i < Length; i++)
             {
-                var val = &ptr[i];
-                wasmtime_component_val_delete(val);
-                ComponentValue.Dispose(*val);
+                ComponentValue.Dispose(ref ptr[i]);
+                wasmtime_component_val_delete(&ptr[i]);
             }
         }
 
