@@ -191,15 +191,16 @@ public class Wit
 
             if (item is WitParser.IncludeContext includeContext)
             {
-                if (includeContext.identifier() is { } identifier)
+                var otherPackage = WitPackageNameVersion.Parse(includeContext.packageName());
+
+                if (otherPackage.IsIdentifierOnly)
                 {
-                    var name = identifier.GetTextWithoutEscape();
-                    worldItems.Add(new WitWorldInclude(packageName, name));
+                    worldItems.Add(new WitWorldInclude(packageName, otherPackage.PackageName.AllParts[0]));
                 }
-                else if (includeContext.packageName() is { } fullOtherPackageName)
+                else
                 {
-                    var (name, otherPackageName) = WitPackageNameVersion.Parse(fullOtherPackageName).WithoutLastNamePart();
-                    worldItems.Add(new WitWorldInclude(otherPackageName, name));
+                    (var name, otherPackage) = otherPackage.WithoutLastNamePart();
+                    worldItems.Add(new WitWorldInclude(otherPackage, name));
                 }
             }
 
@@ -345,7 +346,7 @@ public class Wit
                 ))
                 .ToArray();
 
-            return new WitResource(name, constructors, methods);
+            return new WitResource(packageName.Value, name, constructors, methods);
         }
 
         if (context.typeAlias() is { } typeAliasContext)

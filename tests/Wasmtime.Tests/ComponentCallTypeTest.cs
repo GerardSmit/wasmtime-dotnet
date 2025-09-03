@@ -1,4 +1,5 @@
 ﻿using Xunit;
+using static Wit.Tests.Common.Types;
 
 namespace Wasmtime.Tests;
 
@@ -136,5 +137,68 @@ public class ComponentCallTypeTest
         Assert.Equal("Entity", entity.Name);
         Assert.Equal(10, entity.Position.X);
         Assert.Equal(20, entity.Position.Y);
+    }
+
+    [Fact]
+    public void List()
+    {
+        using var state = new ComponentState();
+
+        var result = state.Exports.MultiplyList([1, 2, 3], 2);
+
+        Assert.Equal([2, 4, 6], result);
+    }
+
+    [Fact]
+    public void List_Nested()
+    {
+        using var state = new ComponentState();
+
+        var result = state.Exports.SumNestedList([[1, 2], [3, 4]]);
+
+        Assert.Equal(10u, result);
+    }
+
+    [Fact]
+    public void List_Record()
+    {
+        using var state = new ComponentState();
+
+        state.Exports.RegisterEntities([
+            new()
+            {
+                Id = 1,
+                Name = "A",
+                Position = new() { X = 1, Y = 2 }
+            },
+            new()
+            {
+                Id = 2,
+                Name = "B",
+                Position = new() { X = 3, Y = 4 }
+            }
+        ]);
+
+        var entities = state.Exports.GetEntities();
+
+        Assert.Equal(2, entities.Length);
+
+        Assert.Equal(1, entities[0].Id);
+        Assert.Equal("A", entities[0].Name);
+        Assert.Equal(1, entities[0].Position.X);
+        Assert.Equal(2, entities[0].Position.Y);
+
+        Assert.Equal(2, entities[1].Id);
+        Assert.Equal("B", entities[1].Name);
+        Assert.Equal(3, entities[1].Position.X);
+        Assert.Equal(4, entities[1].Position.Y);
+    }
+
+    [Fact]
+    public void Enum()
+    {
+        using var state = new ComponentState();
+
+        Assert.Equal(Status.Active, state.Exports.ReturnStatus(Status.Active));
     }
 }

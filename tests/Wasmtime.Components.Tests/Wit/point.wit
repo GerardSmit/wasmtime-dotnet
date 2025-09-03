@@ -4,5 +4,11 @@ package tests:common@0.1.0 {
             x: s32,
             y: s32
         }
+
+        enum status {
+            active,
+            inactive,
+            pending
+        }
     }
 }

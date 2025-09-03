@@ -7,23 +7,21 @@ namespace Wasmtime;
 /// <summary>
 /// Simple builder for creating and manipulating records of record entries.
 /// </summary>
-public readonly unsafe ref struct RecordBuilder
+public readonly unsafe ref struct RecordBuilder : IDisposable
 {
     private readonly wasmtime_component_valrecord _source;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="RecordBuilder"/> struct with the specified items and length.
     /// </summary>
-    /// <param name="ptr">An points of <see cref="RecordBuilderItem"/> representing the items in the record.</param>
     /// <param name="length">The number of items in the record.</param>
     /// <exception cref="ArgumentOutOfRangeException">Thrown when <paramref name="length"/> is less than zero.</exception>
-    public RecordBuilder(RecordBuilderItem* ptr, int length)
+    public RecordBuilder(int length)
     {
-        _source = new wasmtime_component_valrecord
+        fixed (wasmtime_component_valrecord* p = &_source)
         {
-            data = (wasmtime_component_valrecord_entry*)ptr,
-            size = (UIntPtr)length
-        };
+            wasmtime_component_valrecord_new_uninit(p, (nuint)length);
+        }
     }
 
     /// <summary>
@@ -104,6 +102,26 @@ public readonly unsafe ref struct RecordBuilder
                 var entry = &_record.data[_index];
                 return (new ByteVector(entry->name), new ComponentValue(entry->val));
             }
+        }
+    }
+
+    /// <inheritdoc />
+    public void Dispose()
+    {
+        if (_source.data == null) return;
+
+        var data = _source.data;
+
+        for (var i = 0; i < (int)_source.size; i++)
+        {
+            // Names are not disposed, since the values are cached and reused (constants).
+
+            ComponentValue.Dispose(data[i].val);
+        }
+
+        fixed (wasmtime_component_valrecord* p = &_source)
+        {
+            wasmtime_component_valrecord_delete(p);
         }
     }
 }

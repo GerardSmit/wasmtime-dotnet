@@ -396,6 +396,8 @@ public class IndentedStringBuilder
         _indentPending = false;
     }
 
+    public Resetter CreateResetter() => new(this);
+
     private sealed class Indenter : IDisposable
     {
         private readonly IndentedStringBuilder _stringBuilder;
@@ -434,5 +436,25 @@ public class IndentedStringBuilder
 
         public void Dispose()
             => _stringBuilder._indent = _indent;
+    }
+
+    public struct Resetter
+    {
+        private readonly IndentedStringBuilder _builder;
+        private readonly int _length;
+        private readonly int _indent;
+
+        public Resetter(IndentedStringBuilder builder)
+        {
+            _builder = builder;
+            _length = builder.Length;
+            _indent = builder.IndentCount;
+        }
+
+        public void Reset()
+        {
+            _builder.Length = _length;
+            _builder.IndentCount = _indent;
+        }
     }
 }

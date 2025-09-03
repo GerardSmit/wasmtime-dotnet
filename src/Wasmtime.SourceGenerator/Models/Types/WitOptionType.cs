@@ -16,10 +16,27 @@ public record WitOptionType(
     }
 
     /// <inheritdoc />
-    public override void WriteValueGetter(IndentedStringBuilder sb, string paramName, ITypeContainerResolver resolver)
+    public override void WriteValueGetter(IndentedStringBuilder sb, string paramName, string uniqueName,
+        ITypeContainerResolver resolver)
     {
         sb.Append(paramName).Append(".ToOption<");
         ElementType.WriteCSharpType(sb, resolver);
         sb.Append(">()");
+    }
+
+    /// <inheritdoc />
+    public override void WriteResultGetter(IndentedStringBuilder sb, string paramName, int index, ITypeContainerResolver resolver)
+    {
+        sb.Append(paramName).Append(".GetOption<");
+        WriteCSharpType(sb, resolver);
+        sb.Append(">(").Append(index).Append(')');
+    }
+
+    /// <inheritdoc />
+    protected override void WriteCreateComponentValue(IndentedStringBuilder sb, string paramKey, ITypeContainerResolver resolver)
+    {
+        sb.Append("global::Wasmtime.ComponentValue.CreateOption<");
+        WriteCSharpType(sb, resolver);
+        sb.Append(">(").Append(paramKey).Append(")");
     }
 }

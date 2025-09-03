@@ -130,9 +130,15 @@ public record WitCustomType : WitType
         Resolve(resolver).WriteComponentValue(sb, name, ignoreDispose, resolver);
     }
 
-    public override void WriteValueGetter(IndentedStringBuilder sb, string paramName, ITypeContainerResolver resolver)
+    public override void WriteValueGetterInitializer(IndentedStringBuilder sb, string paramName, string uniqueName,
+        ITypeContainerResolver resolver)
     {
-        Resolve(resolver).WriteValueGetter(sb, paramName, resolver);
+        Resolve(resolver).WriteValueGetterInitializer(sb, paramName, uniqueName, resolver);
+    }
+
+    public override void WriteValueGetter(IndentedStringBuilder sb, string paramName, string uniqueName, ITypeContainerResolver resolver)
+    {
+        Resolve(resolver).WriteValueGetter(sb, paramName, uniqueName, resolver);
     }
 
     /// <summary>The package that requested this type. It's possible that the type is defined in the previous name parts.</summary>

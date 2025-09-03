@@ -45,6 +45,7 @@ public record WitType(WitTypeKind Kind)
             WitTypeKind.F64 => "double",
             WitTypeKind.Char => "char",
             WitTypeKind.String => "string",
+            WitTypeKind.Result => "global::Wasmtime.Result",
             _ => throw new NotSupportedException($"C# type mapping is not supported for WIT type kind '{Kind}'"),
         };
     }
@@ -59,10 +60,9 @@ public record WitType(WitTypeKind Kind)
         sb.Append(GetCSharpType(resolver));
     }
 
-    private void WriteCreateComponentValue(IndentedStringBuilder sb, string paramKey, ITypeContainerResolver resolver)
+    protected virtual void WriteCreateComponentValue(IndentedStringBuilder sb, string paramKey, ITypeContainerResolver resolver)
     {
         sb.Append("global::Wasmtime.ComponentValue.");
-
 
         sb.Append(Kind switch
         {
@@ -79,10 +79,16 @@ public record WitType(WitTypeKind Kind)
             WitTypeKind.F64 => "CreateDouble",
             WitTypeKind.Char => "CreateChar",
             WitTypeKind.String => "CreateString",
+            WitTypeKind.Borrow => "CreateBorrow",
             _ => throw new NotSupportedException($"Parameter type '{Kind}' is not supported.")
         });
 
         sb.Append('(').Append(paramKey).Append(")");
+    }
+
+    public virtual void WriteResultGetterInitializer(IndentedStringBuilder sb, string paramName, int index, ITypeContainerResolver resolver)
+    {
+
     }
 
     /// <summary>
@@ -112,6 +118,7 @@ public record WitType(WitTypeKind Kind)
             WitTypeKind.Char => "GetChar",
             WitTypeKind.String => "GetString",
             WitTypeKind.Record => "GetRecordBuilder",
+            WitTypeKind.Result => "GetResult",
             _ => throw new NotSupportedException($"Return type '{Kind}' is not supported.")
         });
 
@@ -119,13 +126,23 @@ public record WitType(WitTypeKind Kind)
     }
 
     /// <summary>
+    /// Writes any initialization code needed before accessing the value from a <c>ComponentValue</c> for this WIT type.
+    /// </summary>
+    /// <param name="sb">The <see cref="IndentedStringBuilder"/> to write to.</param>
+    /// <param name="paramName">The name of the parameter variable.</param>
+    /// <param name="resolver">The type resolver.</param>
+    public virtual void WriteValueGetterInitializer(IndentedStringBuilder sb, string paramName, string uniqueName, ITypeContainerResolver resolver)
+    {
+
+    }
+
+    /// <summary>
     /// Writes the C# code to access the value from a <c>ComponentValue</c> for this WIT type.
     /// </summary>
     /// <param name="sb">The <see cref="IndentedStringBuilder"/> to write to.</param>
     /// <param name="paramName">The name of the parameter variable.</param>
-    /// <param name="index">The index of the parameter in the parameter list.</param>
-    /// <param name="resolver"></param>
-    public virtual void WriteValueGetter(IndentedStringBuilder sb, string paramName, ITypeContainerResolver resolver)
+    /// <param name="resolver">The type resolver.</param>
+    public virtual void WriteValueGetter(IndentedStringBuilder sb, string paramName, string uniqueName, ITypeContainerResolver resolver)
     {
         sb.Append(paramName).Append('.');
 
@@ -144,6 +161,7 @@ public record WitType(WitTypeKind Kind)
             WitTypeKind.F64 => "ToDouble",
             WitTypeKind.Char => "ToChar",
             WitTypeKind.String => "ToStringValue",
+            WitTypeKind.Result => "ToResult",
             _ => throw new NotSupportedException($"Return type '{Kind}' is not supported.")
         });
 
@@ -185,7 +203,7 @@ public record WitType(WitTypeKind Kind)
             return;
         }
 
-        sb.Append("using global::Wasmtime.ComponentValue value_").Append(name.Replace('.', '_')).Append(" = ");
+        sb.Append("using global::Wasmtime.ComponentValue value_").Append(name.ToSafeVariable()).Append(" = ");
         WriteCreateComponentValue(sb, name, resolver);
         sb.AppendLine(";");
     }
@@ -216,7 +234,7 @@ public record WitType(WitTypeKind Kind)
     {
         if (MustBeDisposed && !ignoreDispose)
         {
-            sb.Append("value_").Append(name.Replace('.', '_'));
+            sb.Append("value_").Append(name.ToSafeVariable());
         }
         else
         {

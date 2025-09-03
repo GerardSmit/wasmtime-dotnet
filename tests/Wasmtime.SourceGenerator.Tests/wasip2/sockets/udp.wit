@@ -9,7 +9,7 @@ interface udp {
     @since(version = 0.2.0)
     record incoming-datagram {
         /// The payload.
-        /// 
+        ///
         /// Theoretical max size: ~64 KiB. In practice, typically less than 1500 bytes.
         data: list<u8>,
 

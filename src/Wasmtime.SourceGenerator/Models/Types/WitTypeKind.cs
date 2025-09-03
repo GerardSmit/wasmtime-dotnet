@@ -28,5 +28,7 @@ public enum WitTypeKind
     Stream,
     Func,
     User,
-    Interface
+    Interface,
+    Resource,
+    Borrow
 }

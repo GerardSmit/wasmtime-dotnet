@@ -44,13 +44,8 @@ internal unsafe class ComponentCallResultsInternal : IDisposable
             for (var i = 0; i < Length; i++)
             {
                 var val = &ptr[i];
-
-                if (val->kind == 12)
-                {
-                    wasm_byte_vec_delete(&val->of.@string);
-                }
-
                 wasmtime_component_val_delete(val);
+                ComponentValue.Dispose(*val);
             }
         }
 

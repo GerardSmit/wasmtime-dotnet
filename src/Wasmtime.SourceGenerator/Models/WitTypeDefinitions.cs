@@ -1,3 +1,4 @@
+using System.Collections.Immutable;
 using System.Diagnostics.CodeAnalysis;
 
 namespace Wasmtime.SourceGenerator.Models;
@@ -6,6 +7,33 @@ public record WitTypeDefinitions(EquatableArray<WitTypeDef> Items)
 {
     private Dictionary<string, WitType>? _types;
     private Dictionary<string, ITypeContainer>? _typeContainers;
+
+    public ImmutableArray<T> FindAll<T>(ITypeContainerResolver resolver)
+        where T : WitTypeDef
+    {
+        var builder = ImmutableArray.CreateBuilder<T>();
+        FindAll(Items, resolver, builder);
+        return builder.ToImmutable();
+    }
+
+    private static void FindAll<T>(EquatableArray<WitTypeDef> items, ITypeContainerResolver resolver, ImmutableArray<T>.Builder builder)
+        where T : WitTypeDef
+    {
+        foreach (var item in items)
+        {
+            if (item is T t)
+            {
+                builder.Add(t);
+            }
+
+            if (item is WitWorldInclude include &&
+                resolver.Resolve(include.Package) is WitPackageVersion version &&
+                version.Worlds.TryGetValue(include.WorldName, out var world))
+            {
+                FindAll(world.Definitions.Items, resolver, builder);
+            }
+        }
+    }
 
     public bool TryGetType(string name, [NotNullWhen(true)] out WitType? type)
     {
@@ -60,6 +88,11 @@ public record WitTypeDefinitions(EquatableArray<WitTypeDef> Items)
             if (item is WitVariant variant)
             {
                 dict[variant.Name] = variant.Type;
+            }
+
+            if (item is WitResource resource)
+            {
+                dict[resource.Name] = resource.Type;
             }
         }
 

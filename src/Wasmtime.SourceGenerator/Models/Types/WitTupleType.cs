@@ -37,19 +37,31 @@ public record WitTupleType(
     }
 
     /// <inheritdoc />
-    public override void WriteValueGetter(IndentedStringBuilder sb, string paramName, ITypeContainerResolver resolver)
+    public override void WriteValueGetterInitializer(IndentedStringBuilder sb, string paramName, string uniqueName, ITypeContainerResolver resolver)
+    {
+        sb.Append("global::Wasmtime.ComponentCallResults ").Append(uniqueName).Append(" = ").Append(paramName).AppendLine(".ToTuple();");
+    }
+
+    /// <inheritdoc />
+    public override void WriteValueGetter(IndentedStringBuilder sb, string paramName, string uniqueName, ITypeContainerResolver resolver)
     {
         sb.Append('(');
-
-        // TODO: Cache the tuple variable so it's only called once?
-        var tuple = paramName + ".ToTuple()";
+        sb.IncrementIndent();
 
         for (var i = 0; i < ElementTypes.Length; i++)
         {
-            if (i > 0) sb.Append(", ");
-            ElementTypes[i].WriteResultGetter(sb, tuple, i, resolver);
+            sb.AppendLine(i > 0 ? ", " : "");
+            ElementTypes[i].WriteResultGetter(sb, uniqueName, i, resolver);
         }
 
+        sb.DecrementIndent();
+        sb.AppendLine();
         sb.Append(')');
+    }
+
+    /// <inheritdoc />
+    protected override void WriteCreateComponentValue(IndentedStringBuilder sb, string paramKey, ITypeContainerResolver resolver)
+    {
+        sb.Append("default");
     }
 }

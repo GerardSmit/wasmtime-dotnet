@@ -157,6 +157,16 @@ public readonly struct ComponentValue : IDisposable
     }
 
     /// <summary>
+    /// Initializes a new instance of the <see cref="ComponentValue"/> struct with a <see cref="ListBuilder"/> value.
+    /// </summary>
+    /// <param name="value">The <see cref="RecordBuilder"/> value.</param>
+    public ComponentValue(ListBuilder value)
+    {
+        _val.kind = 13;
+        _val.of.list = value.Value;
+    }
+
+    /// <summary>
     /// Initializes a new instance of the <see cref="ComponentValue"/> struct with a <see cref="RecordBuilder"/> value.
     /// </summary>
     /// <param name="value">The <see cref="RecordBuilder"/> value.</param>
@@ -258,11 +268,33 @@ public readonly struct ComponentValue : IDisposable
     public static ComponentValue CreateString(string value) => new(value);
 
     /// <summary>
-    /// Creates a <see cref="ComponentValue"/> from a <see cref="ReadOnlySpan{byte}"/> value.
+    /// Creates a <see cref="ComponentValue"/> from a <see cref="RecordBuilder"/> value.
     /// </summary>
-    /// <param name="value">The <see cref="ReadOnlySpan{byte}"/> value.</param>
+    /// <param name="value">The <see cref="RecordBuilder"/> value.</param>
     /// <returns>A <see cref="ComponentValue"/> representing the memory.</returns>
     public static ComponentValue CreateRecord(RecordBuilder value) => new(value);
+
+    /// <summary>
+    /// Creates a <see cref="ComponentValue"/> from a <see cref="ListBuilder"/> value.
+    /// </summary>
+    /// <param name="value">The <see cref="ListBuilder"/> value.</param>
+    /// <returns>A <see cref="ComponentValue"/> representing the memory.</returns>
+    public static ComponentValue CreateList(ListBuilder value) => new(value);
+
+    /// <summary>
+    /// Creates a <see cref="ComponentValue"/> from a enum value.
+    /// </summary>
+    /// <typeparam name="T">The enum type.</typeparam>
+    /// <param name="value">The enum value.</param>
+    /// <param name="toBytes">A function pointer to convert the enum to a <see cref="ByteVector"/>.</param>
+    /// <returns>A <see cref="ComponentValue"/> representing the enum.</returns>
+    public static unsafe ComponentValue CreateEnum<T>(T value, delegate* managed<T, ByteVector> toBytes) where T : struct, Enum
+    {
+        var val = new wasmtime_component_val();
+        val.kind = 17;
+        val.of.enumeration = toBytes(value).Value;
+        return new ComponentValue(val);
+    }
 
     public bool ToBoolean()
     {
@@ -342,12 +374,10 @@ public readonly struct ComponentValue : IDisposable
         return new ByteVector(_val.of.@string).GetString();
     }
 
-    public unsafe ComponentCallResults ToTuple()
+    public ListBuilder ToListBuilder()
     {
-        if (_val.kind != 15) throw new InvalidOperationException($"Cannot convert ComponentValue of kind {_val.kind} to Tuple.");
-        var tuple = _val.of.tuple;
-
-        return new ComponentCallResults(tuple.data, (int)tuple.size);
+        if (_val.kind != 13) throw new InvalidOperationException($"Cannot convert ComponentValue of kind {_val.kind} to List.");
+        return new ListBuilder(_val.of.list);
     }
 
     public RecordBuilder ToRecordBuilder()
@@ -356,12 +386,46 @@ public readonly struct ComponentValue : IDisposable
         return new RecordBuilder(_val.of.record);
     }
 
+    public unsafe T ToEnum<T>(delegate* managed<ByteVector, T> toBytes) where T : struct, Enum
+    {
+        if (_val.kind != 17) throw new InvalidOperationException($"Cannot convert ComponentValue of kind {_val.kind} to Enum.");
+        return toBytes(new ByteVector(_val.of.enumeration));
+    }
+
+    public unsafe ComponentCallResults ToTuple()
+    {
+        if (_val.kind != 15) throw new InvalidOperationException($"Cannot convert ComponentValue of kind {_val.kind} to Tuple.");
+        var tuple = _val.of.tuple;
+
+        return new ComponentCallResults(tuple.data, (int)tuple.size);
+    }
+
     /// <inheritdoc />
     public void Dispose()
     {
-        if (_val.kind == 12)
+        Dispose(in _val);
+    }
+
+    internal static void Dispose(in wasmtime_component_val val)
+    {
+        if (val.kind == 12)
         {
-            new ByteVector(_val.of.@string).Dispose();
+            new ByteVector(val.of.@string).Dispose();
+        }
+
+        if (val.kind == 13)
+        {
+            new ListBuilder(val.of.list).Dispose();
+        }
+
+        if (val.kind == 14)
+        {
+            new RecordBuilder(val.of.record).Dispose();
+        }
+
+        if (val.kind == 17)
+        {
+            // Enums are not disposed, since the values are cached and reused (constants).
         }
     }
 }

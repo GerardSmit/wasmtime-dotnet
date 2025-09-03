@@ -4,7 +4,7 @@ public record WitVariantType(
     WitPackageNameVersion Package,
     string Name,
     EquatableArray<WitVariantCase> Values
-) : WitType(WitTypeKind.Enum)
+) : WitType(WitTypeKind.Variant)
 {
     /// <inheritdoc />
     public override void WriteCSharpType(IndentedStringBuilder sb, ITypeContainerResolver resolver)
@@ -18,10 +18,19 @@ public record WitVariantType(
     }
 
     /// <inheritdoc />
-    public override void WriteValueGetter(IndentedStringBuilder sb, string paramName, ITypeContainerResolver resolver)
+    public override void WriteValueGetter(IndentedStringBuilder sb, string paramName, string uniqueName,
+        ITypeContainerResolver resolver)
     {
         sb.Append(paramName).Append(".ToVariant<");
         WriteCSharpType(sb, resolver);
         sb.Append(">()");
+    }
+
+    /// <inheritdoc />
+    protected override void WriteCreateComponentValue(IndentedStringBuilder sb, string paramKey, ITypeContainerResolver resolver)
+    {
+        sb.Append("global::Wasmtime.ComponentValue.CreateVariant<");
+        WriteCSharpType(sb, resolver);
+        sb.Append(">(").Append(paramKey).Append(")");
     }
 }

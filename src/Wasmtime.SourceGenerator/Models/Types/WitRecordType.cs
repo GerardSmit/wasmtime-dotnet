@@ -16,88 +16,30 @@ public record WitRecordType(WitPackageNameVersion Package, string Name, Equatabl
         sb.Append(ComponentSourceGenerator.GetName(Name));
     }
 
-    /// <inheritdoc />
-    public override void WriteParameterInitializer(
-        IndentedStringBuilder sb,
-        string name,
-        ITypeContainerResolver resolver,
-        bool ignoreDispose,
-        bool isMemoryInitializer)
+    protected override void WriteCreateComponentValue(IndentedStringBuilder sb, string paramKey, ITypeContainerResolver resolver)
     {
-        var builderName = $"builder_{name.Replace('.', '_')}";
-        var arrName = $"ptr_{name.Replace('.', '_')}";
-
-        foreach (var field in Fields)
-        {
-            field.Type.WriteParameterInitializer(sb, $"{name}.{field.CSharpName}", resolver, ignoreDispose, isMemoryInitializer: true);
-        }
-
-        sb.Append("// Initialize record ").Append(Name).Append(" (").Append(name).AppendLine(")");
-        sb.Append("global::Wasmtime.RecordBuilderItem* ").Append(arrName).Append(" = stackalloc global::Wasmtime.RecordBuilderItem[").Append(Fields.Length).AppendLine("];");
-        sb.Append("global::Wasmtime.RecordBuilder ").Append(builderName).Append(" = new global::Wasmtime.RecordBuilder(").Append(arrName).Append(", ").Append(Fields.Length).AppendLine(");");
-
-        for (var i = 0; i < Fields.Length; i++)
-        {
-            var field = Fields[i];
-            sb.Append(builderName).Append(".Set(").Append(i).Append(", global::Wit.Constants.")
-                .Append(field.CSharpName)
-                .Append(", ");
-
-            field.Type.WriteComponentValue(sb, $"{name}.{field.CSharpName}", ignoreDispose, resolver);
-
-            sb.AppendLine(");");
-        }
+        sb.Append("global::Wasmtime.ComponentValue.CreateRecord(").Append(paramKey).Append(".ToRecordBuilder())");
     }
 
     /// <inheritdoc />
     public override void WriteParameterSetter(IndentedStringBuilder sb, string parametersVariable, string name,
         int startIndex, bool ignoreDispose, ITypeContainerResolver resolver)
     {
-        sb.Append(parametersVariable).Append("[").Append(startIndex).Append("] = global::Wasmtime.ComponentValue.CreateRecord(builder_").Append(name.Replace('.', '_')).AppendLine(");");
+        sb.Append("global::Wasmtime.ComponentValue.CreateRecord(").Append(name).AppendLine(".ToRecordBuilder());");
     }
 
-    public override void WriteComponentValue(IndentedStringBuilder sb, string name, bool ignoreDispose, ITypeContainerResolver resolver)
-    {
-        sb.Append("global::Wasmtime.ComponentValue.CreateRecord(builder_").Append(name.Replace('.', '_')).Append(")");
-    }
-
-    public override void WriteValueGetter(IndentedStringBuilder sb, string paramName, ITypeContainerResolver resolver)
+    public override void WriteValueGetter(IndentedStringBuilder sb, string paramName, string uniqueName,
+        ITypeContainerResolver resolver)
     {
         WriteCSharpType(sb, resolver);
-        sb.Append(".Create(").Append(paramName).Append(".ToRecordBuilder())");
+        sb.Append(".FromRecordBuilder(").Append(paramName).Append(".ToRecordBuilder())");
     }
 
     /// <inheritdoc />
     public override void WriteResultGetter(IndentedStringBuilder sb, string paramName, int index, ITypeContainerResolver resolver)
     {
         WriteCSharpType(sb, resolver);
-        sb.Append(".Create(").Append(paramName).Append(".GetRecordBuilder(").Append(index).Append("))");
-    }
-
-    public override int GetMemorySize(ITypeContainerResolver resolver)
-    {
-        return Fields.Sum(f => f.Type.GetMemorySize(resolver));
-    }
-
-    public override void WriteBytes(IndentedStringBuilder sb, string name, string baseSpan, ITypeContainerResolver resolver)
-    {
-        var offset = 0;
-
-        var span = $"bytes_{name.Replace('.', '_')}";
-        sb.Append("Span<byte> ").Append(span).Append(" = ").Append(baseSpan).AppendLine(";");
-
-        foreach (var field in Fields)
-        {
-            var size = field.Type.GetMemorySize(resolver);
-
-            field.Type.WriteBytes(
-                sb,
-                $"{name}.{field.CSharpName}",
-                $"{span}.Slice({offset}, {size})",
-                resolver);
-
-            offset += size;
-        }
+        sb.Append(".FromRecordBuilder(").Append(paramName).Append(".GetRecordBuilder(").Append(index).Append("))");
     }
 }
 

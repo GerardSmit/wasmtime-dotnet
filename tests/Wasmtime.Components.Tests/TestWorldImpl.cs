@@ -26,12 +26,41 @@ public sealed class TestWorldImpl : ITestWorld
     public static Point AddPoint(Point p1, Point p2) => new(p1.x + p2.x, p1.y + p2.y);
 
     public static void RegisterEntity(ITypes.Entity e) => Entities[e.id] = e;
+
+    public static void RegisterEntities(List<ITypes.Entity> e)
+    {
+        foreach (var entity in e)
+        {
+            Entities[entity.id] = entity;
+        }
+    }
+
     public static ITypes.Entity GetEntity(int id) => Entities.TryGetValue(id, out var entity) ? entity : new ITypes.Entity(-1, "", new Point(0, 0));
+
+    public static List<ITypes.Entity> GetEntities()
+    {
+        return Entities.Values.ToList();
+    }
 
     public static string Uppercase(string input)
     {
         if (input == null) throw new ArgumentNullException(nameof(input));
         return input.ToUpperInvariant();
+    }
+
+    public static uint[] MultiplyList(uint[] list, uint factor)
+    {
+        var results = new uint[list.Length];
+        for (var i = 0; i < list.Length; i++)
+        {
+            results[i] = list[i] * factor;
+        }
+        return results;
+    }
+
+    public static Status ReturnStatus(Status status)
+    {
+        return status;
     }
 
     private static bool _flag;
@@ -44,6 +73,19 @@ public sealed class TestWorldImpl : ITestWorld
     public static bool GetFlag()
     {
         return _flag;
+    }
+
+    public static uint SumNestedList(List<uint[]> nested)
+    {
+        uint sum = 0;
+        foreach (var list in nested)
+        {
+            foreach (var value in list)
+            {
+                sum += value;
+            }
+        }
+        return sum;
     }
 
     public static void HostCallback()

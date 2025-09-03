@@ -83,7 +83,7 @@ externType
     ;
 
 include
-    : gate? Include (packageName | identifier) with? Semicolon
+    : gate? Include packageName with? Semicolon
     ;
 
 with

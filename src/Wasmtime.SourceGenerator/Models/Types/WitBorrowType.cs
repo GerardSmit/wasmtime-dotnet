@@ -5,4 +5,30 @@ namespace Wasmtime.SourceGenerator.Models;
 /// </summary>
 public record WitBorrowType(
     WitType ElementType
-) : WitType(WitTypeKind.List);
+) : WitType(WitTypeKind.Borrow)
+{
+    /// <inheritdoc />
+    public override void WriteCSharpType(IndentedStringBuilder sb, ITypeContainerResolver resolver)
+    {
+        sb.Append("global::Wasmtime.Borrow<");
+        ElementType.WriteCSharpType(sb, resolver);
+        sb.Append('>');
+    }
+
+    /// <inheritdoc />
+    public override void WriteValueGetter(IndentedStringBuilder sb, string paramName, string uniqueName,
+        ITypeContainerResolver resolver)
+    {
+        sb.Append(paramName).Append(".ToBorrow<");
+        ElementType.WriteCSharpType(sb, resolver);
+        sb.Append(">()");
+    }
+
+    /// <inheritdoc />
+    public override void WriteResultGetter(IndentedStringBuilder sb, string paramName, int index, ITypeContainerResolver resolver)
+    {
+        sb.Append(paramName).Append(".GetBorrow<");
+        ElementType.WriteCSharpType(sb, resolver);
+        sb.Append(">(").Append(index).Append(')');
+    }
+}

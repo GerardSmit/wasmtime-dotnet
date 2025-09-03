@@ -228,6 +228,20 @@ public readonly unsafe ref struct ComponentCallResults : IDisposable
     }
 
     /// <summary>
+    /// Gets the <see cref="ListBuilder"/> result at the specified index.
+    /// </summary>
+    /// <param name="index">The zero-based index of the result.</param>
+    /// <returns>The <see cref="ListBuilder"/> value at the specified index.</returns>
+    /// <exception cref="ArgumentOutOfRangeException">Thrown if the index is out of range.</exception>
+    /// <exception cref="InvalidOperationException">Thrown if the value at the index is not a <see cref="RecordBuilder"/>.</exception>
+    public ListBuilder GetListBuilder(int index)
+    {
+        if (index < 0 || index >= Length) throw new ArgumentOutOfRangeException(nameof(index));
+        var val = _result?.Array[index] ?? _val[index];
+        return val.kind == 13 ? new ListBuilder(val.of.list) : throw new InvalidOperationException("Value is not a record");
+    }
+
+    /// <summary>
     /// Gets the <see cref="RecordBuilder"/> result at the specified index.
     /// </summary>
     /// <param name="index">The zero-based index of the result.</param>
@@ -239,6 +253,21 @@ public readonly unsafe ref struct ComponentCallResults : IDisposable
         if (index < 0 || index >= Length) throw new ArgumentOutOfRangeException(nameof(index));
         var val = _result?.Array[index] ?? _val[index];
         return val.kind == 14 ? new RecordBuilder(val.of.record) : throw new InvalidOperationException("Value is not a record");
+    }
+
+    /// <summary>
+    /// Gets the enum result at the specified index.
+    /// </summary>
+    /// <param name="index">The zero-based index of the result.</param>
+    /// <param name="toEnum">A pointer to a function that converts a <see cref="ByteVector"/> to the enum type.</param>
+    /// <returns>The <see cref="RecordBuilder"/> value at the specified index.</returns>
+    /// <exception cref="ArgumentOutOfRangeException">Thrown if the index is out of range.</exception>
+    /// <exception cref="InvalidOperationException">Thrown if the value at the index is not a <see cref="RecordBuilder"/>.</exception>
+    public T GetEnum<T>(int index, delegate* managed<ByteVector, T> toEnum)
+    {
+        if (index < 0 || index >= Length) throw new ArgumentOutOfRangeException(nameof(index));
+        var val = _result?.Array[index] ?? _val[index];
+        return val.kind == 17 ? toEnum(new ByteVector(val.of.enumeration)) : throw new InvalidOperationException("Value is not an enum");
     }
 
     /// <summary>
