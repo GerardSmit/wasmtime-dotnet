@@ -10,6 +10,36 @@ namespace Wasmtime;
 /// </summary>
 public struct ComponentValue : IDisposable
 {
+    #if DEBUG
+    private static int _activeCount;
+
+    public static int ActiveCount => _activeCount;
+    #else
+    public static int ActiveCount => throw new InvalidOperationException("ActiveCount is only available in DEBUG builds.");
+    #endif
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private static void IncrementActiveCount(bool externallyOwned)
+    {
+        #if DEBUG
+        if (!externallyOwned)
+        {
+            System.Threading.Interlocked.Increment(ref _activeCount);
+        }
+        #endif
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private static void DecrementActiveCount()
+    {
+        #if DEBUG
+        if (System.Threading.Interlocked.Decrement(ref _activeCount) < 0)
+        {
+            throw new InvalidOperationException("ActiveCount went below zero");
+        }
+        #endif
+    }
+
     // ** DO NOT ADD FIELDS TO THIS STRUCTURE. **
     // This struct is a direct mapping to the native wasmtime_component_val structure.
     // Adding fields will change the memory layout and break interop.
@@ -21,9 +51,10 @@ public struct ComponentValue : IDisposable
     /// Initializes a new instance of the <see cref="ComponentValue"/> struct with an existing native handle.
     /// </summary>
     /// <param name="val">Pointer to the native component value.</param>
-    internal ComponentValue(wasmtime_component_val val)
+    internal ComponentValue(wasmtime_component_val val, bool externallyOwned)
     {
         _val = val;
+        IncrementActiveCount(externallyOwned);
     }
 
     /// <summary>
@@ -150,30 +181,33 @@ public struct ComponentValue : IDisposable
     /// Initializes a new instance of the <see cref="ComponentValue"/> struct with a <see cref="string"/> value.
     /// </summary>
     /// <param name="value">The <see cref="string"/> value.</param>
-    public ComponentValue(string value)
+    public ComponentValue(string value, bool externallyOwned)
     {
         _val.kind = 12;
         _val.of.@string = new ByteVector(value).Value;
+        IncrementActiveCount(externallyOwned);
     }
 
     /// <summary>
     /// Initializes a new instance of the <see cref="ComponentValue"/> struct with a <see cref="ListBuilder"/> value.
     /// </summary>
     /// <param name="value">The <see cref="RecordBuilder"/> value.</param>
-    public ComponentValue(ListBuilder value)
+    public ComponentValue(ListBuilder value, bool externallyOwned)
     {
         _val.kind = 13;
         _val.of.list = value.Value;
+        IncrementActiveCount(externallyOwned);
     }
 
     /// <summary>
     /// Initializes a new instance of the <see cref="ComponentValue"/> struct with a <see cref="RecordBuilder"/> value.
     /// </summary>
     /// <param name="value">The <see cref="RecordBuilder"/> value.</param>
-    public ComponentValue(RecordBuilder value)
+    public ComponentValue(RecordBuilder value, bool externallyOwned)
     {
         _val.kind = 14;
         _val.of.record = value.Value;
+        IncrementActiveCount(externallyOwned);
     }
 
     /// <summary>
@@ -265,21 +299,21 @@ public struct ComponentValue : IDisposable
     /// </summary>
     /// <param name="value">The <see cref="string"/> value.</param>
     /// <returns>A <see cref="ComponentValue"/> representing the string.</returns>
-    public static ComponentValue CreateString(string value) => new(value);
+    public static ComponentValue CreateString(string value, bool externallyOwned) => new(value, externallyOwned);
 
     /// <summary>
     /// Creates a <see cref="ComponentValue"/> from a <see cref="RecordBuilder"/> value.
     /// </summary>
     /// <param name="value">The <see cref="RecordBuilder"/> value.</param>
     /// <returns>A <see cref="ComponentValue"/> representing the memory.</returns>
-    public static ComponentValue CreateRecord(RecordBuilder value) => new(value);
+    public static ComponentValue CreateRecord(RecordBuilder value, bool externallyOwned) => new(value, externallyOwned);
 
     /// <summary>
     /// Creates a <see cref="ComponentValue"/> from a <see cref="ListBuilder"/> value.
     /// </summary>
     /// <param name="value">The <see cref="ListBuilder"/> value.</param>
     /// <returns>A <see cref="ComponentValue"/> representing the memory.</returns>
-    public static ComponentValue CreateList(ListBuilder value) => new(value);
+    public static ComponentValue CreateList(ListBuilder value, bool externallyOwned) => new(value, externallyOwned);
 
     /// <summary>
     /// Creates a <see cref="ComponentValue"/> from a enum value.
@@ -297,7 +331,9 @@ public struct ComponentValue : IDisposable
         var val = new wasmtime_component_val();
         val.kind = 17;
         val.of.enumeration = copyConstants ? new ByteVector(bytes).Value : bytes.Value;
-        return new ComponentValue(val);
+
+        IncrementActiveCount(copyConstants);
+        return new ComponentValue(val, copyConstants);
     }
 
     /// <summary>
@@ -333,7 +369,8 @@ public struct ComponentValue : IDisposable
             val.of.flags = builder.Value;
         }
 
-        return new ComponentValue(val);
+        IncrementActiveCount(copyConstants);
+        return new ComponentValue(val, copyConstants);
     }
 
     public readonly bool ToBoolean()
@@ -481,18 +518,23 @@ public struct ComponentValue : IDisposable
                 return;
             case 12:
                 new ByteVector(val.of.@string).Dispose();
+                DecrementActiveCount();
                 break;
             case 13:
                 new ListBuilder(val.of.list).Dispose();
+                DecrementActiveCount();
                 break;
             case 14:
                 new RecordBuilder(val.of.record).Dispose();
+                DecrementActiveCount();
                 break;
             case 17:
                 // Enums are not disposed since the values are cached and reused (constants).
+                DecrementActiveCount();
                 break;
             case 20:
                 new FlagsBuilder(val.of.flags).Dispose();
+                DecrementActiveCount();
                 break;
         }
 

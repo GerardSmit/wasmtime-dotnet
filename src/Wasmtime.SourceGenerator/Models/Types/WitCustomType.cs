@@ -99,16 +99,16 @@ public record WitCustomType : WitType
     public override void WriteParameterInitializer(IndentedStringBuilder sb, string name,
         ITypeContainerResolver resolver,
         bool ignoreDispose,
-        bool copyConstants)
+        bool externallyOwned)
     {
-        Resolve(resolver).WriteParameterInitializer(sb, name, resolver, ignoreDispose, copyConstants);
+        Resolve(resolver).WriteParameterInitializer(sb, name, resolver, ignoreDispose, externallyOwned);
     }
 
     /// <inheritdoc />
     public override void WriteParameterSetter(IndentedStringBuilder sb, string parametersVariable, string name,
-        int startIndex, bool ignoreDispose, ITypeContainerResolver resolver, bool copyConstants)
+        int startIndex, bool ignoreDispose, ITypeContainerResolver resolver, bool externallyOwned)
     {
-        Resolve(resolver).WriteParameterSetter(sb, parametersVariable, name, startIndex, ignoreDispose, resolver, copyConstants);
+        Resolve(resolver).WriteParameterSetter(sb, parametersVariable, name, startIndex, ignoreDispose, resolver, externallyOwned);
     }
 
     public override void WriteBytes(IndentedStringBuilder sb, string name, string span, ITypeContainerResolver resolver)
@@ -122,9 +122,9 @@ public record WitCustomType : WitType
     }
 
     public override void WriteComponentValue(IndentedStringBuilder sb, string name, bool ignoreDispose,
-        ITypeContainerResolver resolver, bool copyConstants)
+        ITypeContainerResolver resolver, bool externallyOwned)
     {
-        Resolve(resolver).WriteComponentValue(sb, name, ignoreDispose, resolver, copyConstants);
+        Resolve(resolver).WriteComponentValue(sb, name, ignoreDispose, resolver, externallyOwned);
     }
 
     public override void WriteValueGetterInitializer(IndentedStringBuilder sb, string paramName, string uniqueName,

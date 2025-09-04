@@ -28,7 +28,7 @@ public record WitVariantType(
 
     /// <inheritdoc />
     protected override void WriteCreateComponentValue(IndentedStringBuilder sb, string paramKey,
-        ITypeContainerResolver resolver, bool copyConstants)
+        ITypeContainerResolver resolver, bool externallyOwned)
     {
         sb.Append("global::Wasmtime.ComponentValue.CreateVariant<");
         WriteCSharpType(sb, resolver);

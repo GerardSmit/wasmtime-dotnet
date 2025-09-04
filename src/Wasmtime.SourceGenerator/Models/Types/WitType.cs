@@ -50,7 +50,7 @@ public record WitType(WitTypeKind Kind)
         });
     }
 
-    protected virtual void WriteCreateComponentValue(IndentedStringBuilder sb, string paramKey, ITypeContainerResolver resolver, bool copyConstants)
+    protected virtual void WriteCreateComponentValue(IndentedStringBuilder sb, string paramKey, ITypeContainerResolver resolver, bool externallyOwned)
     {
         sb.Append("global::Wasmtime.ComponentValue.");
 
@@ -73,7 +73,14 @@ public record WitType(WitTypeKind Kind)
             _ => throw new NotSupportedException($"Parameter type '{Kind}' is not supported.")
         });
 
-        sb.Append('(').Append(paramKey).Append(")");
+        sb.Append('(').Append(paramKey);
+
+        if (Kind is WitTypeKind.String)
+        {
+            sb.Append(", externallyOwned: ").Append(externallyOwned ? "true" : "false");
+        }
+
+        sb.Append(")");
     }
 
     public virtual void WriteResultGetterInitializer(IndentedStringBuilder sb, string paramName, int index, ITypeContainerResolver resolver)
@@ -162,9 +169,9 @@ public record WitType(WitTypeKind Kind)
     /// <param name="name">The name of the parameter.</param>
     /// <param name="resolver">The type resolver.</param>
     /// <param name="ignoreDispose"></param>
-    /// <param name="copyConstants"></param>
+    /// <param name="externallyOwned"></param>
     public virtual void WriteParameterInitializer(IndentedStringBuilder sb, string name,
-        ITypeContainerResolver resolver, bool ignoreDispose, bool copyConstants)
+        ITypeContainerResolver resolver, bool ignoreDispose, bool externallyOwned)
     {
         if (!MustBeDisposed || ignoreDispose)
         {
@@ -172,7 +179,7 @@ public record WitType(WitTypeKind Kind)
         }
 
         sb.Append("using global::Wasmtime.ComponentValue value_").Append(name.ToSafeVariable()).Append(" = ");
-        WriteCreateComponentValue(sb, name, resolver, copyConstants);
+        WriteCreateComponentValue(sb, name, resolver, externallyOwned);
         sb.AppendLine(";");
     }
 
@@ -185,23 +192,23 @@ public record WitType(WitTypeKind Kind)
     /// <param name="startIndex">The start index in the parameters span.</param>
     /// <param name="ignoreDispose"></param>
     /// <param name="resolver">The type resolver.</param>
-    /// <param name="copyConstants"></param>
+    /// <param name="externallyOwned"></param>
     public virtual void WriteParameterSetter(IndentedStringBuilder sb, string parametersVariable, string name,
-        int startIndex, bool ignoreDispose, ITypeContainerResolver resolver, bool copyConstants)
+        int startIndex, bool ignoreDispose, ITypeContainerResolver resolver, bool externallyOwned)
     {
         sb.Append(parametersVariable).Append("[").Append(startIndex).Append("] = ");
-        WriteComponentValue(sb, name, ignoreDispose, resolver, copyConstants);
+        WriteComponentValue(sb, name, ignoreDispose, resolver, externallyOwned);
         sb.AppendLine(";");
     }
 
     public virtual void WriteBytes(IndentedStringBuilder sb, string name, string span, ITypeContainerResolver resolver)
     {
-        WriteComponentValue(sb, name, false, resolver, copyConstants: false);
+        WriteComponentValue(sb, name, false, resolver, externallyOwned: false);
         sb.Append(".WriteBytes(").Append(span).AppendLine(");");
     }
 
     public virtual void WriteComponentValue(IndentedStringBuilder sb, string name, bool ignoreDispose,
-        ITypeContainerResolver resolver, bool copyConstants)
+        ITypeContainerResolver resolver, bool externallyOwned)
     {
         if (MustBeDisposed && !ignoreDispose)
         {
@@ -209,7 +216,7 @@ public record WitType(WitTypeKind Kind)
         }
         else
         {
-            WriteCreateComponentValue(sb, name, resolver, copyConstants);
+            WriteCreateComponentValue(sb, name, resolver, externallyOwned);
         }
     }
 

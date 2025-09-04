@@ -35,7 +35,8 @@ public readonly unsafe struct ListBuilder : IDisposable
                 throw new ArgumentOutOfRangeException(nameof(index));
             }
 
-            return new ComponentValue(_vector.data[index]);
+            var data = (ComponentValue*)_vector.data;
+            return data[index];
         }
         set
         {

@@ -692,9 +692,9 @@ public class ComponentSourceGenerator() : IncrementalGenerator("ComponentSourceG
             var field = record.Fields[index];
             var uniqueName = GetName(field.Name, uppercaseFirst: false);
 
-            field.Type.WriteParameterInitializer(sb, uniqueName, resolver, ignoreDispose: true, copyConstants: true);
+            field.Type.WriteParameterInitializer(sb, uniqueName, resolver, ignoreDispose: true, externallyOwned: true);
             sb.Append("builder.Set(").Append(index).Append(", new global::Wasmtime.ByteVector(global::Wit.Constants.").Append(field.CSharpName).Append("), ");
-            field.Type.WriteComponentValue(sb, field.CSharpName, ignoreDispose: true, resolver, copyConstants: true);
+            field.Type.WriteComponentValue(sb, field.CSharpName, ignoreDispose: true, resolver, externallyOwned: true);
             sb.AppendLine(");");
         }
 
@@ -709,9 +709,9 @@ public class ComponentSourceGenerator() : IncrementalGenerator("ComponentSourceG
             var field = record.Fields[index];
             var uniqueName = GetName(field.Name, uppercaseFirst: false);
 
-            field.Type.WriteParameterInitializer(sb, uniqueName, resolver, ignoreDispose: true, copyConstants: false);
+            field.Type.WriteParameterInitializer(sb, uniqueName, resolver, ignoreDispose: true, externallyOwned: false);
             sb.Append("builder.Set(").Append(index).Append(", global::Wit.Constants.").Append(field.CSharpName).Append(", ");
-            field.Type.WriteComponentValue(sb, field.CSharpName, ignoreDispose: true, resolver, copyConstants: false);
+            field.Type.WriteComponentValue(sb, field.CSharpName, ignoreDispose: true, resolver, externallyOwned: false);
             sb.AppendLine(");");
         }
 
@@ -800,7 +800,7 @@ public class ComponentSourceGenerator() : IncrementalGenerator("ComponentSourceG
                 for (var index = 0; index < funcType.Parameters.Length; index++)
                 {
                     var param = funcType.Parameters[index];
-                    param.Type.WriteParameterInitializer(sb, GetName(param.Name, false), resolver, ignoreDispose: false, copyConstants: false);
+                    param.Type.WriteParameterInitializer(sb, GetName(param.Name, false), resolver, ignoreDispose: false, externallyOwned: false);
                 }
 
                 if (sb.Length > length) sb.AppendLine();
@@ -815,7 +815,7 @@ public class ComponentSourceGenerator() : IncrementalGenerator("ComponentSourceG
                 for (var i = 0; i < funcType.Parameters.Length;)
                 {
                     var param = funcType.Parameters[i];
-                    param.Type.WriteParameterSetter(sb, "parameters", GetName(param.Name, false), i, ignoreDispose: false, resolver: resolver, copyConstants: false);
+                    param.Type.WriteParameterSetter(sb, "parameters", GetName(param.Name, false), i, ignoreDispose: false, resolver: resolver, externallyOwned: false);
                     i += param.Type.GetParameterSize(resolver);
                 }
 
@@ -981,14 +981,14 @@ public class ComponentSourceGenerator() : IncrementalGenerator("ComponentSourceG
                 {
                     var param = funcType.Results[i];
                     var variable = GetName(funcType, i);
-                    param.WriteParameterInitializer(sb, variable, resolver, ignoreDispose: true, copyConstants: true);
+                    param.WriteParameterInitializer(sb, variable, resolver, ignoreDispose: true, externallyOwned: true);
                 }
 
                 for (var i = 0; i < funcType.Results.Length; i++)
                 {
                     var variable = GetName(funcType, i);
                     var param = funcType.Results[i];
-                    param.WriteParameterSetter(sb, "results", variable, i, ignoreDispose: true, resolver, copyConstants: true);
+                    param.WriteParameterSetter(sb, "results", variable, i, ignoreDispose: true, resolver, externallyOwned: true);
                     i += param.GetParameterSize(resolver);
                 }
             }

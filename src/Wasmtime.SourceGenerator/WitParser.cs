@@ -19,78 +19,83 @@ public class Wit
 
     public static WitDirectory Parse(WitRawDirectory directory)
     {
-        var packages = new Dictionary<WitPackageName, Dictionary<SemVer, MutableWitPackageVersion>>();
-
         WitPackageNameVersion? globalPackageName = null;
-        var files = new List<WitParser.FileContext>();
 
-        foreach (var content in directory.Files)
+        try
         {
-            var inputStream = new AntlrInputStream(content);
-            var lexer = new WitLexer(inputStream);
+            var packages = new Dictionary<WitPackageName, Dictionary<SemVer, MutableWitPackageVersion>>();
 
-            var commonTokenStream = new CommonTokenStream(lexer);
-            var parser = new WitParser(commonTokenStream)
+            var files = new List<WitParser.FileContext>();
+
+            foreach (var content in directory.Files)
             {
-                ErrorHandler = new BailErrorStrategy(),
-            };
+                var inputStream = new AntlrInputStream(content);
+                var lexer = new WitLexer(inputStream);
 
-            WitParser.FileContext? file;
+                var commonTokenStream = new CommonTokenStream(lexer);
+                var parser = new WitParser(commonTokenStream);
 
-            try
-            {
-                file = parser.file();
-            }
-            catch
-            {
-                throw;
-            }
+                var file = parser.file();
 
-            if (file.filePackage()?.packageName() is { } packageName)
-            {
-                var name = WitPackageNameVersion.Parse(packageName);
 
-                if (globalPackageName is null)
+                if (file.filePackage()?.packageName() is { } packageName)
                 {
-                    globalPackageName = name;
+                    var name = WitPackageNameVersion.Parse(packageName);
+
+                    if (globalPackageName is null)
+                    {
+                        globalPackageName = name;
+                    }
+                    else if (!globalPackageName.Equals(name))
+                    {
+                        // Multiple different packages in the same directory is not allowed
+                        return new WitDirectory(
+                            Packages: default,
+                            Diagnostics: ImmutableArray.Create(
+                                ReportedDiagnostic.Create(
+                                    DiagnosticMessages.MultipleFilePackagesInDirectory,
+                                    Location.None, // TODO: Get real location from 'packageName'
+                                    ImmutableArray.Create<object>(globalPackageName.ToString(), name.ToString(), directory.Path)
+                                )
+                            ));
+                    }
                 }
-                else if (!globalPackageName.Equals(name))
-                {
-                    // Multiple different packages in the same directory is not allowed
-                    return new WitDirectory(
-                        Packages: default,
-                        Diagnostics: ImmutableArray.Create(
-                            ReportedDiagnostic.Create(
-                                DiagnosticMessages.MultipleFilePackagesInDirectory,
-                                Location.None, // TODO: Get real location from 'packageName'
-                                ImmutableArray.Create<object>(globalPackageName.ToString(), name.ToString(), directory.Path)
-                            )
-                        ));
-                }
+
+                files.Add(file);
             }
 
-            files.Add(file);
+            foreach (var file in files)
+            {
+                VisitPackage(
+                    packages,
+                    globalPackageName,
+                    file.fileDefinition().SelectMany(x => x.children));
+            }
+
+            // Flatten versions with the same name into a single package
+            var witPackages = packages.Select(x => new WitPackage(
+                    x.Key,
+                    x.Value.ToDictionary(v => v.Key, v => v.Value.ToImmutable())
+                ))
+                .ToDictionary(x => x.PackageName, x => x);
+
+            return new WitDirectory(
+                witPackages,
+                Diagnostics: default
+            );
         }
-
-        foreach (var file in files)
+        catch (Exception e)
         {
-            VisitPackage(
-                packages,
-                globalPackageName,
-                file.fileDefinition().SelectMany(x => x.children));
+            return new WitDirectory(
+                Packages: default,
+                Diagnostics: ImmutableArray.Create(
+                    ReportedDiagnostic.Create(
+                        DiagnosticMessages.Error,
+                        Location.None,
+                        ImmutableArray.Create<object>(globalPackageName?.ToString() ?? "<unknown>", e.Message)
+                    )
+                ));
         }
-
-        // Flatten versions with the same name into a single package
-        var witPackages = packages.Select(x => new WitPackage(
-                x.Key,
-                x.Value.ToDictionary(v => v.Key, v => v.Value.ToImmutable())
-            ))
-            .ToDictionary(x => x.PackageName, x => x);
-
-        return new WitDirectory(
-            witPackages,
-            Diagnostics: default
-        );
     }
 
     private static void Add(

@@ -17,17 +17,18 @@ public record WitRecordType(WitPackageNameVersion Package, string Name, Equatabl
     }
 
     protected override void WriteCreateComponentValue(IndentedStringBuilder sb, string paramKey,
-        ITypeContainerResolver resolver, bool copyConstants)
+        ITypeContainerResolver resolver, bool externallyOwned)
     {
         sb.Append("global::Wasmtime.ComponentValue.CreateRecord(")
             .Append(paramKey)
             .Append(".ToRecordBuilder(copyConstants: ")
-            .Append(copyConstants ? "true" : "false")
-            .Append("))");
+            .Append(externallyOwned ? "true" : "false")
+            .Append("), externallyOwned: ")
+            .Append(externallyOwned ? "true" : "false")
+            .Append(")");
     }
 
-    public override void WriteValueGetter(IndentedStringBuilder sb, string paramName, string uniqueName,
-        ITypeContainerResolver resolver)
+    public override void WriteValueGetter(IndentedStringBuilder sb, string paramName, string uniqueName, ITypeContainerResolver resolver)
     {
         WriteCSharpType(sb, resolver);
         sb.Append(".FromRecordBuilder(").Append(paramName).Append(".ToRecordBuilder())");

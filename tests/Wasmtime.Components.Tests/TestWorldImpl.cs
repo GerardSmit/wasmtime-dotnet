@@ -1,4 +1,5 @@
-﻿using TestWorld.wit.imports.tests.component.v0_1_0;
+﻿using System.Runtime.InteropServices;
+using TestWorld.wit.imports.tests.component.v0_1_0;
 using static TestWorld.wit.imports.tests.common.v0_1_0.ITypes;
 
 namespace TestWorld;
@@ -6,6 +7,23 @@ namespace TestWorld;
 public sealed class TestWorldImpl : ITestWorld
 {
     public static Dictionary<int, ITypes.Entity> Entities { get; } = new();
+
+    public static string CombineString(string s1, string s2)
+    {
+        return s1 + s2;
+    }
+
+    public static double GetMemoryUsage()
+    {
+        return GC.GetTotalMemory(true) / 1024.0 / 1024.0;
+    }
+
+    public static void ForceGc()
+    {
+        GC.Collect();
+        GC.WaitForPendingFinalizers();
+        GC.Collect();
+    }
 
     public static byte AddU8(byte x, byte y) => (byte)(x + y);
     public static sbyte AddS8(sbyte x, sbyte y) => (sbyte)(x + y);

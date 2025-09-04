@@ -16,17 +16,14 @@ namespace Wasmtime;
 public readonly unsafe ref struct ComponentCallResults : IDisposable
 {
     private readonly ComponentValue* _val;
-    private readonly SemaphoreSlim? _semaphore;
     private readonly ComponentCallResultsInternal? _result;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="ComponentCallResults"/> struct.
     /// </summary>
     /// <param name="result">The internal result structure to wrap.</param>
-    /// <param name="semaphore">The semaphore to release when disposed.</param>
-    internal ComponentCallResults(SemaphoreSlim? semaphore, ComponentCallResultsInternal result)
+    internal ComponentCallResults(ComponentCallResultsInternal result)
     {
-        _semaphore = semaphore;
         _result = result;
         Length = result.Length;
     }
@@ -64,7 +61,6 @@ public readonly unsafe ref struct ComponentCallResults : IDisposable
     public void Dispose()
     {
         _result?.Dispose();
-        _semaphore?.Release();
     }
 
     private static void ThrowOutOfRange() => throw new ArgumentOutOfRangeException();

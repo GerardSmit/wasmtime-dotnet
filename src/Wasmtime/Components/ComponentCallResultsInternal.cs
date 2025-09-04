@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Threading;
 using Wasmtime.Interop;
 
 namespace Wasmtime;
@@ -12,26 +13,33 @@ internal unsafe class ComponentCallResultsInternal : IDisposable
     public readonly ComponentValue[] Array;
     private wasmtime_component_func _func;
     private wasmtime_context* _context;
+    private SemaphoreSlim? _semaphore;
 
-    internal ComponentCallResultsInternal()
+    private ComponentCallResultsInternal()
     {
         Array = new ComponentValue[16];
     }
 
     public int Length { get; private set; }
 
-    internal void Initialize(int count, wasmtime_component_func func, wasmtime_context* context)
+    internal void Initialize(int count, wasmtime_component_func func, wasmtime_context* context, SemaphoreSlim semaphore)
     {
+        if (_semaphore is not null)
+        {
+            throw new InvalidOperationException("This instance is already in use.");
+        }
+
         Length = count;
         _func = func;
         _context = context;
+        _semaphore = semaphore;
     }
 
     public void Dispose()
     {
-        if (_context == null)
+        if (_semaphore is not {} semaphore)
         {
-            return;
+            throw new ObjectDisposedException(nameof(ComponentCallResultsInternal));
         }
 
         fixed (wasmtime_component_func* ptr = &_func)
@@ -39,21 +47,13 @@ internal unsafe class ComponentCallResultsInternal : IDisposable
             wasmtime_component_func_post_return(ptr, _context);
         }
 
-        fixed (ComponentValue* ptrValue = Array)
-        {
-            var ptr = (wasmtime_component_val*)ptrValue;
-
-            for (var i = 0; i < Length; i++)
-            {
-                ComponentValue.Dispose(ref ptr[i]);
-                wasmtime_component_val_delete(&ptr[i]);
-            }
-        }
-
         System.Array.Clear(Array, 0, Length);
 
+        _semaphore = null;
         _context = null;
         _func = default;
         Length = 0;
+
+        semaphore.Release();
     }
 }

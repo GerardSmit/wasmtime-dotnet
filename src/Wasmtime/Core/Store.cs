@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Collections.Concurrent;
+using System.Collections.Generic;
 using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
 using System.Threading;
 using Wasmtime.Interop;
 
@@ -96,9 +98,35 @@ public sealed unsafe class Store : IDisposable
     /// <inheritdoc />
     public void Dispose()
     {
-        ReleaseUnmanagedResources();
-        Disposed = true;
-        GC.SuppressFinalize(this);
+        var acquiredLocks = new List<ComponentInstance>(_instances.Count);
+
+        try
+        {
+            // Before disposing the store, acquire all instance locks to ensure no
+            // calls are being made into the store while it's being disposed.
+            foreach (var instance in _instances.Values)
+            {
+                if (instance.Lock.Wait(TimeSpan.FromSeconds(5)))
+                {
+                    acquiredLocks.Add(instance);
+                }
+                else
+                {
+                    throw new TimeoutException("Could not acquire lock to dispose store");
+                }
+            }
+
+            ReleaseUnmanagedResources();
+            Disposed = true;
+            GC.SuppressFinalize(this);
+        }
+        finally
+        {
+            foreach (var instance in acquiredLocks)
+            {
+                instance.Lock.Release();
+            }
+        }
     }
 
     ~Store()

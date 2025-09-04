@@ -31,7 +31,7 @@ public record WitListType(
         string name,
         ITypeContainerResolver resolver,
         bool ignoreDispose,
-        bool copyConstants)
+        bool externallyOwned)
     {
         var builderName = $"builder_{name.ToSafeVariable()}";
         var indexName = $"i_{name.ToSafeVariable()}";
@@ -48,10 +48,10 @@ public record WitListType(
         sb.Append("for (int ").Append(indexName).Append(" = 0; ").Append(indexName).Append(" < ").Append(name).Append(".Length; ").Append(indexName).AppendLine("++)");
         sb.AppendLine("{");
         sb.IncrementIndent();
-        ElementType.WriteParameterInitializer(sb, itemName, resolver, ignoreDispose: true, copyConstants: copyConstants);
+        ElementType.WriteParameterInitializer(sb, itemName, resolver, ignoreDispose: true, externallyOwned: externallyOwned);
 
         sb.Append(builderName).Append("[").Append(indexName).Append("] = ");
-        ElementType.WriteComponentValue(sb, itemName, ignoreDispose: true, resolver: resolver, copyConstants: copyConstants);
+        ElementType.WriteComponentValue(sb, itemName, ignoreDispose: true, resolver: resolver, externallyOwned: externallyOwned);
 
         sb.AppendLine(";");
         sb.DecrementIndent();
@@ -60,16 +60,23 @@ public record WitListType(
 
     /// <inheritdoc />
     public override void WriteParameterSetter(IndentedStringBuilder sb, string parametersVariable, string name,
-        int startIndex, bool ignoreDispose, ITypeContainerResolver resolver, bool copyConstants)
+        int startIndex, bool ignoreDispose, ITypeContainerResolver resolver, bool externallyOwned)
     {
-        sb.Append(parametersVariable).Append("[").Append(startIndex).Append("] = global::Wasmtime.ComponentValue.CreateList(builder_").Append(name.ToSafeVariable()).AppendLine(");");
+        sb.Append(parametersVariable).Append("[").Append(startIndex).Append("] = global::Wasmtime.ComponentValue.CreateList(builder_")
+            .Append(name.ToSafeVariable())
+            .Append(", externallyOwned: ")
+            .Append(externallyOwned ? "true" : "false")
+            .AppendLine(");");
     }
 
     /// <inheritdoc />
     public override void WriteComponentValue(IndentedStringBuilder sb, string name, bool ignoreDispose,
-        ITypeContainerResolver resolver, bool copyConstants)
+        ITypeContainerResolver resolver, bool externallyOwned)
     {
-        sb.Append("global::Wasmtime.ComponentValue.CreateList(builder_").Append(name.ToSafeVariable()).Append(")");
+        sb.Append("global::Wasmtime.ComponentValue.CreateList(builder_").Append(name.ToSafeVariable())
+            .Append(", externallyOwned: ")
+            .Append(externallyOwned ? "true" : "false")
+            .Append(")");
     }
 
     /// <inheritdoc />

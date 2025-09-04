@@ -18,6 +18,10 @@ world test {
 
     export host-callback: func();
     export host-combine-string: func(s1: string, s2: string) -> string;
+    export combine-string: func(s1: string, s2: string) -> string;
+
+    export get-memory-usage: func() -> f64;
+    export force-gc: func();
 
     import callback: func();
     import callback-combine-string: func(s1: string, s2: string) -> string;

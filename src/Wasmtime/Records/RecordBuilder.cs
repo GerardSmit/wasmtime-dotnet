@@ -58,12 +58,12 @@ public readonly unsafe ref struct RecordBuilder : IDisposable
     /// <summary>
     /// Gets the value of the entry at the specified offset.
     /// </summary>
-    /// <param name="offset">The zero-based index of the entry to get.</param
+    /// <param name="offset">The zero-based index of the entry to get.</param>
     /// <returns>The value of the entry at the specified offset.</returns>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public ComponentValue Get(int offset)
     {
-        return new ComponentValue(_source.data[offset].val);
+        return new ComponentValue(_source.data[offset].val, externallyOwned: true);
     }
 
     /// <summary>
@@ -106,7 +106,7 @@ public readonly unsafe ref struct RecordBuilder : IDisposable
             get
             {
                 var entry = &_record.data[_index];
-                return (new ByteVector(entry->name), new ComponentValue(entry->val));
+                return (new ByteVector(entry->name), new ComponentValue(entry->val, externallyOwned: true));
             }
         }
     }

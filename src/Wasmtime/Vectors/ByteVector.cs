@@ -77,6 +77,25 @@ public readonly unsafe struct ByteVector : IDisposable, IEquatable<ByteVector>
         }
     }
 
+    public static ByteVector Constant(string value)
+    {
+        var length = Encoding.UTF8.GetByteCount(value);
+        var ptr = (byte*)Marshal.AllocHGlobal(length);
+
+        fixed (char* utf16 = value)
+        {
+            Encoding.UTF8.GetBytes(utf16, value.Length, ptr, length);
+        }
+
+        var vector = new wasm_byte_vec_t
+        {
+            size = (UIntPtr)length,
+            data = ptr
+        };
+
+        return new ByteVector(vector);
+    }
+
     internal ByteVector(wasmtime_error* error)
     {
         fixed (wasm_byte_vec_t* vec = &_vector)

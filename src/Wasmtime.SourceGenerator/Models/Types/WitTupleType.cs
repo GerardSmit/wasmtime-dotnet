@@ -49,7 +49,7 @@ public record WitTupleType(
 
     /// <inheritdoc />
     protected override void WriteCreateComponentValue(IndentedStringBuilder sb, string paramKey,
-        ITypeContainerResolver resolver, bool copyConstants)
+        ITypeContainerResolver resolver, bool externallyOwned)
     {
         sb.Append("default");
     }
