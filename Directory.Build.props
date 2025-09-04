@@ -1,9 +1,8 @@
 <Project>
   <PropertyGroup>
-    <DevBuild Condition="'$(DevBuild)'==''">false</DevBuild>
-    <WasmtimeVersion Condition="'$(WasmtimeVersion)'==''">36.0.2</WasmtimeVersion>
-    <WasmtimeDotnetVersion Condition="'$(WasmtimeDotnetVersion)'==''"></WasmtimeDotnetVersion>
-    <WasmtimePackageVersion Condition="'$(DevBuild)'=='true'">$(WasmtimeVersion)$(WasmtimeDotnetVersion)-dev</WasmtimePackageVersion>
-    <WasmtimePackageVersion Condition="'$(WasmtimePackageVersion)'==''">$(WasmtimeVersion)$(WasmtimeDotnetVersion)</WasmtimePackageVersion>
+    <WasmtimePackagePrefix>GerardSmit.Wasmtime</WasmtimePackagePrefix>
+    <DevBuild>false</DevBuild>
+    <WasmtimeVersion>36.0.2</WasmtimeVersion>
+    <WasmtimePackageVersion>$(WasmtimeVersion)-alpha.7</WasmtimePackageVersion>
   </PropertyGroup>
 </Project>

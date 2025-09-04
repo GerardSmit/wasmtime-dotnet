@@ -67,6 +67,33 @@ public class ComponentCallTest(ComponentFixture fixture)
         });
     }
 
+    [Fact]
+    public async Task StressTest()
+    {
+        using var state = fixture.CreateState();
+
+        var entity = fixture.Imports.Entity;
+        var expectedEntityDescription = $"Entity {entity.Id}: {entity.Name}";
+
+        var upperCase = ExecuteConcurrent(
+            () => state.Exports,
+            static s => Assert.Equal("UPPERCASE", s.Uppercase("uppercase")));
+
+        var lowerCase = ExecuteConcurrent(
+            () => state.Exports,
+            static s => Assert.Equal("foobar", s.HostCombineString("foo", "bar")));
+
+        var entityDescription = ExecuteConcurrent(
+            () => state.Exports,
+            s => Assert.Equal(expectedEntityDescription, s.GetHostEntityDescription()));
+
+        var sumNestedLists = ExecuteConcurrent(
+            () => state.Exports,
+            static s => Assert.Equal(6u, s.SumNestedList([[1, 2], [3]])));
+
+        await Task.WhenAll(upperCase, lowerCase, entityDescription, sumNestedLists);
+    }
+
     private static async Task ExecuteConcurrent<TState>(Func<TState> createState, Action<TState> action)
     {
         var cpuCount = Environment.ProcessorCount;

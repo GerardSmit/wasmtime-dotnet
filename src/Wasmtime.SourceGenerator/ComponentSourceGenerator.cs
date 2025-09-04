@@ -334,7 +334,7 @@ public class ComponentSourceGenerator() : IncrementalGenerator("ComponentSourceG
                 // Imports
                 foreach (var (name, type) in allImports)
                 {
-                    WriteExport(sb, name, type, imports, projectResolver);
+                    WriteImport(sb, name, type, imports, projectResolver);
                 }
 
                 sb.AppendLine();
@@ -397,7 +397,7 @@ public class ComponentSourceGenerator() : IncrementalGenerator("ComponentSourceG
         return result;
     }
 
-    private static void WriteExport(
+    private static void WriteImport(
         IndentedStringBuilder sb,
         string name,
         WitType type,
@@ -422,7 +422,7 @@ public class ComponentSourceGenerator() : IncrementalGenerator("ComponentSourceG
             {
                 foreach (var field in interfaceType.Fields)
                 {
-                    WriteExport(sb, field.Name, field.Type, imports, projectResolver);
+                    WriteImport(sb, field.Name, field.Type, imports, projectResolver);
                 }
             }
             else
@@ -677,22 +677,47 @@ public class ComponentSourceGenerator() : IncrementalGenerator("ComponentSourceG
 
         // ToRecordBuilder
         sb.AppendLine();
-        sb.Append("public global::Wasmtime.RecordBuilder ToRecordBuilder()");
+        sb.Append("public global::Wasmtime.RecordBuilder ToRecordBuilder(bool copyConstants)");
         sb.AppendLine();
         sb.AppendLine("{");
         sb.IncrementIndent();
         sb.Append("var builder = new global::Wasmtime.RecordBuilder(").Append(record.Fields.Length).AppendLine(", disposeNames: false);");
         sb.AppendLine();
+
+        sb.AppendLine("if (copyConstants)");
+        sb.AppendLine("{");
+        sb.IncrementIndent();
         for (var index = 0; index < record.Fields.Length; index++)
         {
             var field = record.Fields[index];
             var uniqueName = GetName(field.Name, uppercaseFirst: false);
 
-            field.Type.WriteParameterInitializer(sb, uniqueName, resolver, ignoreDispose: true, isMemoryInitializer: false);
-            sb.Append("builder.Set(").Append(index).Append(", global::Wit.Constants.").Append(field.CSharpName).Append(", ");
-            field.Type.WriteComponentValue(sb, field.CSharpName, ignoreDispose: true, resolver);
+            field.Type.WriteParameterInitializer(sb, uniqueName, resolver, ignoreDispose: true, copyConstants: true);
+            sb.Append("builder.Set(").Append(index).Append(", new global::Wasmtime.ByteVector(global::Wit.Constants.").Append(field.CSharpName).Append("), ");
+            field.Type.WriteComponentValue(sb, field.CSharpName, ignoreDispose: true, resolver, copyConstants: true);
             sb.AppendLine(");");
         }
+
+        sb.DecrementIndent();
+        sb.AppendLine("}");
+        sb.AppendLine("else");
+        sb.AppendLine("{");
+        sb.IncrementIndent();
+
+        for (var index = 0; index < record.Fields.Length; index++)
+        {
+            var field = record.Fields[index];
+            var uniqueName = GetName(field.Name, uppercaseFirst: false);
+
+            field.Type.WriteParameterInitializer(sb, uniqueName, resolver, ignoreDispose: true, copyConstants: false);
+            sb.Append("builder.Set(").Append(index).Append(", global::Wit.Constants.").Append(field.CSharpName).Append(", ");
+            field.Type.WriteComponentValue(sb, field.CSharpName, ignoreDispose: true, resolver, copyConstants: false);
+            sb.AppendLine(");");
+        }
+
+        sb.DecrementIndent();
+        sb.AppendLine("}");
+
         sb.AppendLine();
         sb.AppendLine("return builder;");
         sb.DecrementIndent();
@@ -775,7 +800,7 @@ public class ComponentSourceGenerator() : IncrementalGenerator("ComponentSourceG
                 for (var index = 0; index < funcType.Parameters.Length; index++)
                 {
                     var param = funcType.Parameters[index];
-                    param.Type.WriteParameterInitializer(sb, GetName(param.Name, false), resolver, ignoreDispose: false, isMemoryInitializer: false);
+                    param.Type.WriteParameterInitializer(sb, GetName(param.Name, false), resolver, ignoreDispose: false, copyConstants: false);
                 }
 
                 if (sb.Length > length) sb.AppendLine();
@@ -790,7 +815,7 @@ public class ComponentSourceGenerator() : IncrementalGenerator("ComponentSourceG
                 for (var i = 0; i < funcType.Parameters.Length;)
                 {
                     var param = funcType.Parameters[i];
-                    param.Type.WriteParameterSetter(sb, "parameters", GetName(param.Name, false), i, ignoreDispose: false, resolver);
+                    param.Type.WriteParameterSetter(sb, "parameters", GetName(param.Name, false), i, ignoreDispose: false, resolver: resolver, copyConstants: false);
                     i += param.Type.GetParameterSize(resolver);
                 }
 
@@ -956,15 +981,15 @@ public class ComponentSourceGenerator() : IncrementalGenerator("ComponentSourceG
                 {
                     var param = funcType.Results[i];
                     var variable = GetName(funcType, i);
-                    param.WriteParameterInitializer(sb, variable, resolver, ignoreDispose: true, isMemoryInitializer: false);
+                    param.WriteParameterInitializer(sb, variable, resolver, ignoreDispose: true, copyConstants: true);
                 }
 
-                for (var i = 0; i < funcType.Parameters.Length; i++)
+                for (var i = 0; i < funcType.Results.Length; i++)
                 {
                     var variable = GetName(funcType, i);
-                    var param = funcType.Parameters[i];
-                    param.Type.WriteParameterSetter(sb, "results", variable, i, ignoreDispose: true, resolver);
-                    i += param.Type.GetParameterSize(resolver);
+                    var param = funcType.Results[i];
+                    param.WriteParameterSetter(sb, "results", variable, i, ignoreDispose: true, resolver, copyConstants: true);
+                    i += param.GetParameterSize(resolver);
                 }
             }
 

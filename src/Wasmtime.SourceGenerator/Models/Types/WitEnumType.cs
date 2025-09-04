@@ -65,7 +65,8 @@ public abstract record WitEnumBaseType(WitPackageNameVersion Package, string Nam
     }
 
     /// <inheritdoc />
-    protected override void WriteCreateComponentValue(IndentedStringBuilder sb, string paramKey, ITypeContainerResolver resolver)
+    protected override void WriteCreateComponentValue(IndentedStringBuilder sb, string paramKey,
+        ITypeContainerResolver resolver, bool copyConstants)
     {
         sb.Append("global::Wasmtime.ComponentValue.Create").Append(TypeName).Append("<");
         WriteCSharpType(sb, resolver);
@@ -74,6 +75,8 @@ public abstract record WitEnumBaseType(WitPackageNameVersion Package, string Nam
         WriteCSharpType(sb, resolver);
         sb.Append("Helper.ToByteVector");
         AddWriteCreateComponentValueArguments(sb, resolver);
+        sb.Append(", copyConstants: ");
+        sb.Append(copyConstants ? "true" : "false");
         sb.Append(')');
     }
 

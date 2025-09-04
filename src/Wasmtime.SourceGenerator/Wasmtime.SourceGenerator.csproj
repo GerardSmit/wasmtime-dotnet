@@ -9,21 +9,40 @@
         <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
         <PolySharpIncludeRuntimeSupportedAttributes>true</PolySharpIncludeRuntimeSupportedAttributes>
         <SgfAddModuleInitializerAttribute>false</SgfAddModuleInitializerAttribute>
+        <DevelopmentDependency>true</DevelopmentDependency>
+        <EnforceExtendedAnalyzerRules>true</EnforceExtendedAnalyzerRules>
     </PropertyGroup>
+
+    <ItemGroup>
+        <Content Include="$(OutputPath)\$(AssemblyName).dll" Pack="true" PackagePath="analyzers/dotnet/cs" Visible="false" />
+    </ItemGroup>
 
     <ItemGroup>
         <CompilerVisibleProperty Include="SgfAddModuleInitializerAttribute" />
     </ItemGroup>
 
-    <ItemGroup>
-        <PackageReference Include="Microsoft.CodeAnalysis.Analyzers" Version="3.3.4" PrivateAssets="all" />
-        <PackageReference Include="Microsoft.CodeAnalysis.CSharp" Version="4.7.0" PrivateAssets="all" />
-        <PackageReference Include="PolySharp" Version="1.15.0">
-          <PrivateAssets>all</PrivateAssets>
-          <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
-        </PackageReference>
-        <PackageReference Include="SourceGenerator.Foundations" Version="2.0.13" />
-    </ItemGroup>
+    <PropertyGroup>
+        <PackageId>$(WasmtimePackagePrefix).SourceGenerator</PackageId>
+        <Version>$(WasmtimePackageVersion)</Version>
+        <Authors>Gerard Smit</Authors>
+        <Owners>Gerard Smit</Owners>
+        <IncludeSymbols>true</IncludeSymbols>
+        <SymbolPackageFormat>snupkg</SymbolPackageFormat>
+        <RepositoryUrl>https://github.com/GerardSmit/wasmtime-dotnet</RepositoryUrl>
+        <PublishRepositoryUrl>true</PublishRepositoryUrl>
+        <EmbedUntrackedSources>true</EmbedUntrackedSources>
+        <Summary>C# source generator for WIT (WebAssembly Interface Types) bindings for Wasmtime</Summary>
+        <PackageTags>webassembly, .net, wasm, wasmtime</PackageTags>
+        <Title>Wasmtime</Title>
+        <PackageDescription>
+            Source generator for WIT (WebAssembly Interface Types) bindings for Wasmtime.
+
+            Automatically generates C# bindings to WebAssembly modules based on WIT files for imports and exports.
+        </PackageDescription>
+        <PackageLicenseExpression>Apache-2.0 WITH LLVM-exception</PackageLicenseExpression>
+        <EnablePackageValidation>true</EnablePackageValidation>
+        <ContinuousIntegrationBuild Condition="'$(DevBuild)'=='false'">true</ContinuousIntegrationBuild>
+    </PropertyGroup>
 
     <ItemGroup>
         <PackageReference Include="Antlr4BuildTasks" Version="12.10.0" PrivateAssets="all" />
@@ -36,10 +55,18 @@
     </ItemGroup>
 
     <ItemGroup>
-        <Compile Include="../Wasmtime/HashCode.cs" Link="Utils/HashCode.cs" />
+        <PackageReference Include="Microsoft.CodeAnalysis.Analyzers" Version="3.3.4" PrivateAssets="all" />
+        <PackageReference Include="Microsoft.CodeAnalysis.CSharp" Version="4.7.0" PrivateAssets="all" />
+        <PackageReference Include="PolySharp" Version="1.15.0">
+          <PrivateAssets>all</PrivateAssets>
+          <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+        </PackageReference>
+        <PackageReference Include="SourceGenerator.Foundations" Version="2.0.13" />
+        <PackageReference Include="Antlr4.Runtime.Standard" Version="4.13.1" />
+        <PackageReference Update="*" PrivateAssets="all" /> <!-- Make all dependencies private -->
     </ItemGroup>
 
     <ItemGroup>
-        <PackageReference Include="Antlr4.Runtime.Standard" Version="4.13.1" />
+        <Compile Include="../Wasmtime/HashCode.cs" Link="Utils/HashCode.cs" />
     </ItemGroup>
 </Project>

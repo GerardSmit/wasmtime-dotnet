@@ -50,7 +50,7 @@ public record WitType(WitTypeKind Kind)
         });
     }
 
-    protected virtual void WriteCreateComponentValue(IndentedStringBuilder sb, string paramKey, ITypeContainerResolver resolver)
+    protected virtual void WriteCreateComponentValue(IndentedStringBuilder sb, string paramKey, ITypeContainerResolver resolver, bool copyConstants)
     {
         sb.Append("global::Wasmtime.ComponentValue.");
 
@@ -162,9 +162,9 @@ public record WitType(WitTypeKind Kind)
     /// <param name="name">The name of the parameter.</param>
     /// <param name="resolver">The type resolver.</param>
     /// <param name="ignoreDispose"></param>
-    /// <param name="isMemoryInitializer"></param>
+    /// <param name="copyConstants"></param>
     public virtual void WriteParameterInitializer(IndentedStringBuilder sb, string name,
-        ITypeContainerResolver resolver, bool ignoreDispose, bool isMemoryInitializer)
+        ITypeContainerResolver resolver, bool ignoreDispose, bool copyConstants)
     {
         if (!MustBeDisposed || ignoreDispose)
         {
@@ -172,7 +172,7 @@ public record WitType(WitTypeKind Kind)
         }
 
         sb.Append("using global::Wasmtime.ComponentValue value_").Append(name.ToSafeVariable()).Append(" = ");
-        WriteCreateComponentValue(sb, name, resolver);
+        WriteCreateComponentValue(sb, name, resolver, copyConstants);
         sb.AppendLine(";");
     }
 
@@ -185,20 +185,23 @@ public record WitType(WitTypeKind Kind)
     /// <param name="startIndex">The start index in the parameters span.</param>
     /// <param name="ignoreDispose"></param>
     /// <param name="resolver">The type resolver.</param>
-    public virtual void WriteParameterSetter(IndentedStringBuilder sb, string parametersVariable, string name, int startIndex, bool ignoreDispose, ITypeContainerResolver resolver)
+    /// <param name="copyConstants"></param>
+    public virtual void WriteParameterSetter(IndentedStringBuilder sb, string parametersVariable, string name,
+        int startIndex, bool ignoreDispose, ITypeContainerResolver resolver, bool copyConstants)
     {
         sb.Append(parametersVariable).Append("[").Append(startIndex).Append("] = ");
-        WriteComponentValue(sb, name, ignoreDispose, resolver);
+        WriteComponentValue(sb, name, ignoreDispose, resolver, copyConstants);
         sb.AppendLine(";");
     }
 
     public virtual void WriteBytes(IndentedStringBuilder sb, string name, string span, ITypeContainerResolver resolver)
     {
-        WriteComponentValue(sb, name, false, resolver);
+        WriteComponentValue(sb, name, false, resolver, copyConstants: false);
         sb.Append(".WriteBytes(").Append(span).AppendLine(");");
     }
 
-    public virtual void WriteComponentValue(IndentedStringBuilder sb, string name, bool ignoreDispose, ITypeContainerResolver resolver)
+    public virtual void WriteComponentValue(IndentedStringBuilder sb, string name, bool ignoreDispose,
+        ITypeContainerResolver resolver, bool copyConstants)
     {
         if (MustBeDisposed && !ignoreDispose)
         {
@@ -206,7 +209,7 @@ public record WitType(WitTypeKind Kind)
         }
         else
         {
-            WriteCreateComponentValue(sb, name, resolver);
+            WriteCreateComponentValue(sb, name, resolver, copyConstants);
         }
     }
 

@@ -288,11 +288,15 @@ public struct ComponentValue : IDisposable
     /// <param name="value">The enum value.</param>
     /// <param name="toBytes">A function pointer to convert the enum to a <see cref="ByteVector"/>.</param>
     /// <returns>A <see cref="ComponentValue"/> representing the enum.</returns>
-    public static unsafe ComponentValue CreateEnum<T>(T value, delegate* managed<T, ByteVector> toBytes) where T : struct, Enum
+    public static unsafe ComponentValue CreateEnum<T>(
+        T value,
+        delegate* managed<T, ByteVector> toBytes,
+        bool copyConstants) where T : struct, Enum
     {
+        var bytes = toBytes(value);
         var val = new wasmtime_component_val();
         val.kind = 17;
-        val.of.enumeration = toBytes(value).Value;
+        val.of.enumeration = copyConstants ? new ByteVector(bytes).Value : bytes.Value;
         return new ComponentValue(val);
     }
 
@@ -307,7 +311,8 @@ public struct ComponentValue : IDisposable
     public static unsafe ComponentValue CreateFlags<T>(
         T value,
         delegate* managed<T, ByteVector> toBytes,
-        delegate* managed<T, Span<T>, int> expand
+        delegate* managed<T, Span<T>, int> expand,
+        bool copyConstants
     ) where T : unmanaged, Enum
     {
         Span<T> values = stackalloc T[64];
@@ -321,7 +326,8 @@ public struct ComponentValue : IDisposable
             var builder = new FlagsBuilder(count, disposeValues: false);
             for (var i = 0; i < count; i++)
             {
-                builder[i] = toBytes(values[i]);
+                var bytes = toBytes(values[i]);
+                builder[i] = copyConstants ? new ByteVector(bytes) : bytes;
             }
 
             val.of.flags = builder.Value;

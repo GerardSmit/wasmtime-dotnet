@@ -12,6 +12,7 @@ world test {
 
     export set-flag: func(flag: bool);
     export get-flag: func() -> bool;
+    export get-host-entity-description: func() -> string;
 
     export sum-nested-list: func(nested: list<list<u32>>) -> u32;
 
@@ -20,4 +21,5 @@ world test {
 
     import callback: func();
     import callback-combine-string: func(s1: string, s2: string) -> string;
+    import get-host-entity: func() -> entity;
 }

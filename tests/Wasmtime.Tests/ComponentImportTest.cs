@@ -24,4 +24,16 @@ public class ComponentImportTest(ComponentFixture fixture)
         Assert.True(fixture.Imports.CallbackCombineStringWasCalled);
         Assert.Equal("foobar", result);
     }
+
+    [Fact]
+    public void Import_CallsHost()
+    {
+        using var state = fixture.CreateState();
+
+        var entity = fixture.Imports.Entity;
+        var expected = $"Entity {entity.Id}: {entity.Name}";
+
+        var result = state.Exports.GetHostEntityDescription();
+        Assert.Equal(expected, result);
+    }
 }

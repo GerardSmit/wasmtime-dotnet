@@ -99,15 +99,16 @@ public record WitCustomType : WitType
     public override void WriteParameterInitializer(IndentedStringBuilder sb, string name,
         ITypeContainerResolver resolver,
         bool ignoreDispose,
-        bool isMemoryInitializer)
+        bool copyConstants)
     {
-        Resolve(resolver).WriteParameterInitializer(sb, name, resolver, ignoreDispose, isMemoryInitializer);
+        Resolve(resolver).WriteParameterInitializer(sb, name, resolver, ignoreDispose, copyConstants);
     }
 
     /// <inheritdoc />
-    public override void WriteParameterSetter(IndentedStringBuilder sb, string parametersVariable, string name, int startIndex, bool ignoreDispose, ITypeContainerResolver resolver)
+    public override void WriteParameterSetter(IndentedStringBuilder sb, string parametersVariable, string name,
+        int startIndex, bool ignoreDispose, ITypeContainerResolver resolver, bool copyConstants)
     {
-        Resolve(resolver).WriteParameterSetter(sb, parametersVariable, name, startIndex, ignoreDispose, resolver);
+        Resolve(resolver).WriteParameterSetter(sb, parametersVariable, name, startIndex, ignoreDispose, resolver, copyConstants);
     }
 
     public override void WriteBytes(IndentedStringBuilder sb, string name, string span, ITypeContainerResolver resolver)
@@ -120,9 +121,10 @@ public record WitCustomType : WitType
         return Resolve(resolver).GetMemorySize(resolver);
     }
 
-    public override void WriteComponentValue(IndentedStringBuilder sb, string name, bool ignoreDispose, ITypeContainerResolver resolver)
+    public override void WriteComponentValue(IndentedStringBuilder sb, string name, bool ignoreDispose,
+        ITypeContainerResolver resolver, bool copyConstants)
     {
-        Resolve(resolver).WriteComponentValue(sb, name, ignoreDispose, resolver);
+        Resolve(resolver).WriteComponentValue(sb, name, ignoreDispose, resolver, copyConstants);
     }
 
     public override void WriteValueGetterInitializer(IndentedStringBuilder sb, string paramName, string uniqueName,

@@ -90,6 +90,13 @@ public sealed class TestWorldImpl : ITestWorld
         return _flag;
     }
 
+    public static string GetHostEntityDescription()
+    {
+        var entity = exports.TestWorld.GetHostEntity();
+
+        return $"Entity {entity.id}: {entity.name}";
+    }
+
     public static uint SumNestedList(List<uint[]> nested)
     {
         uint sum = 0;

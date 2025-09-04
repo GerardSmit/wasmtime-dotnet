@@ -48,7 +48,8 @@ public record WitTupleType(
     }
 
     /// <inheritdoc />
-    protected override void WriteCreateComponentValue(IndentedStringBuilder sb, string paramKey, ITypeContainerResolver resolver)
+    protected override void WriteCreateComponentValue(IndentedStringBuilder sb, string paramKey,
+        ITypeContainerResolver resolver, bool copyConstants)
     {
         sb.Append("default");
     }

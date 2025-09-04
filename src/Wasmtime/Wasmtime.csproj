@@ -12,13 +12,13 @@
 
   <PropertyGroup>
     <AssemblyName>Wasmtime.Dotnet</AssemblyName>
-    <PackageId>Wasmtime</PackageId>
+    <PackageId>$(WasmtimePackagePrefix)</PackageId>
     <Version>$(WasmtimePackageVersion)</Version>
-    <Authors>Peter Huene</Authors>
-    <Owners>Peter Huene</Owners>
+    <Authors>Gerard Smit, Peter Huene</Authors>
+    <Owners>Gerard Smit, Peter Huene</Owners>
     <IncludeSymbols>true</IncludeSymbols>
     <SymbolPackageFormat>snupkg</SymbolPackageFormat>
-    <RepositoryUrl>https://github.com/bytecodealliance/wasmtime-dotnet</RepositoryUrl>
+    <RepositoryUrl>https://github.com/GerardSmit/wasmtime-dotnet</RepositoryUrl>
     <PublishRepositoryUrl>true</PublishRepositoryUrl>
     <EmbedUntrackedSources>true</EmbedUntrackedSources>
     <PackageReleaseNotes>Update Wasmtime to $(WasmtimeVersion).</PackageReleaseNotes>
@@ -33,7 +33,6 @@ Wasmtime is a standalone runtime for WebAssembly, using the Cranelift JIT compil
 The .NET embedding of Wasmtime enables .NET code to instantiate WebAssembly modules and to interact with them in-process.
     </PackageDescription>
     <PackageLicenseExpression>Apache-2.0 WITH LLVM-exception</PackageLicenseExpression>
-    <PackageReadmeFile>README.md</PackageReadmeFile>
     <EnablePackageValidation>true</EnablePackageValidation>
     <ContinuousIntegrationBuild Condition="'$(DevBuild)'=='false'">true</ContinuousIntegrationBuild>
   </PropertyGroup>
@@ -45,7 +44,6 @@ The .NET embedding of Wasmtime enables .NET code to instantiate WebAssembly modu
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
     <PackageReference Include="System.Memory" Version="4.5.5" Condition="'$(TargetFramework)' == 'netstandard2.0'" />
-    <PackageReference Include="IndexRange" Version="1.0.2" Condition="'$(TargetFramework)' == 'netstandard2.0'" />
     <PackageReference Include="System.Runtime.CompilerServices.Unsafe" Version="6.1.2" Condition="'$(TargetFramework)' == 'netstandard2.1'" />
   </ItemGroup>
 

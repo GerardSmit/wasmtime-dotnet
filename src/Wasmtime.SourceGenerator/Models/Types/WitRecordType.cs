@@ -16,9 +16,14 @@ public record WitRecordType(WitPackageNameVersion Package, string Name, Equatabl
         sb.Append(ComponentSourceGenerator.GetName(Name));
     }
 
-    protected override void WriteCreateComponentValue(IndentedStringBuilder sb, string paramKey, ITypeContainerResolver resolver)
+    protected override void WriteCreateComponentValue(IndentedStringBuilder sb, string paramKey,
+        ITypeContainerResolver resolver, bool copyConstants)
     {
-        sb.Append("global::Wasmtime.ComponentValue.CreateRecord(").Append(paramKey).Append(".ToRecordBuilder())");
+        sb.Append("global::Wasmtime.ComponentValue.CreateRecord(")
+            .Append(paramKey)
+            .Append(".ToRecordBuilder(copyConstants: ")
+            .Append(copyConstants ? "true" : "false")
+            .Append("))");
     }
 
     public override void WriteValueGetter(IndentedStringBuilder sb, string paramName, string uniqueName,

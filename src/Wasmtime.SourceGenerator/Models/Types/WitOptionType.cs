@@ -25,7 +25,8 @@ public record WitOptionType(
     }
 
     /// <inheritdoc />
-    protected override void WriteCreateComponentValue(IndentedStringBuilder sb, string paramKey, ITypeContainerResolver resolver)
+    protected override void WriteCreateComponentValue(IndentedStringBuilder sb, string paramKey,
+        ITypeContainerResolver resolver, bool copyConstants)
     {
         sb.Append("global::Wasmtime.ComponentValue.CreateOption<");
         WriteCSharpType(sb, resolver);
