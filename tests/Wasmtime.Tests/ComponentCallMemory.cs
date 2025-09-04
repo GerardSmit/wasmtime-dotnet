@@ -22,7 +22,7 @@ public class ComponentCallMemory(ComponentFixture fixture, ITestOutputHelper out
         output.WriteLine($"   HOST:  {hostMemory:0.00} MB");
         output.WriteLine($"   GUEST: {guestMemory:0.00} MB");
 
-        for (var i = 0; i < 100; i++)
+        for (var i = 0; i < 100_000_000; i++)
         {
             await ExecuteConcurrent(
                 () => state.Exports,
@@ -30,11 +30,13 @@ public class ComponentCallMemory(ComponentFixture fixture, ITestOutputHelper out
 
             var newHostMemory = GetMemoryUsage();
             var newGuestMemory = state.Exports.GetMemoryUsage();
+            var usage = state.Exports.GetMemoryTest();
 
             output.WriteLine("");
             output.WriteLine($"Iterations {i + 1}:");
             output.WriteLine($"   HOST:  {newHostMemory:0.00} MB (diff: {newHostMemory - hostMemory:0.00} MB), active values: {ComponentValue.ActiveCount}");
-            output.WriteLine($"   GUEST: {newGuestMemory:0.00} MB (diff: {newGuestMemory - guestMemory:0.00} MB)");
+            output.WriteLine($"   GUEST: {newGuestMemory:0.00} MB (diff: {newGuestMemory - guestMemory:0.00} MB), open allocations: {usage.OpenAllocations}/{usage.Allocations}, active handles: {usage.OpenGcHandles}/{usage.GcHandles}");
+
             hostMemory = newHostMemory;
             guestMemory = newGuestMemory;
 

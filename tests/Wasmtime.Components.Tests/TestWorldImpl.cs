@@ -25,6 +25,15 @@ public sealed class TestWorldImpl : ITestWorld
         GC.Collect();
     }
 
+    public static ITestWorld.MemoryTest GetMemoryTest()
+    {
+       return new ITestWorld.MemoryTest(
+           exports.GCHandle.GcHandles,
+           exports.GCHandle.OpenGcHandles,
+           exports.NativeMemory.Allocations,
+           exports.NativeMemory.OpenAllocations);
+    }
+
     public static byte AddU8(byte x, byte y) => (byte)(x + y);
     public static sbyte AddS8(sbyte x, sbyte y) => (sbyte)(x + y);
 

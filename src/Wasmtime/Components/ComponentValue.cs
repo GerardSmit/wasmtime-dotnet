@@ -15,7 +15,7 @@ public struct ComponentValue : IDisposable
 
     public static int ActiveCount => _activeCount;
     #else
-    public static int ActiveCount => throw new InvalidOperationException("ActiveCount is only available in DEBUG builds.");
+    public static int ActiveCount => 0;
     #endif
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
