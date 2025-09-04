@@ -1,0 +1,15 @@
+{
+  "name": "tests-wasm",
+  "description": "Implementation of the test component in JavaScript",
+  "type": "module",
+  "scripts": {
+    "build": "jco componentize tests.js --wit wit/component.wit --world-name test --out tests.wasm --disable all",
+    "transpile": "jco transpile tests.wasm -o dist/transpiled",
+    "transpiled-js": "node run-transpiled.js",
+    "all": "npm run build && npm run transpile && npm run transpiled-js"
+  },
+  "dependencies": {
+    "@bytecodealliance/jco": "^1.13.0",
+    "@bytecodealliance/componentize-js": "^0.18.4"
+  }
+}

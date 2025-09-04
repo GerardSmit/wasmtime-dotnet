@@ -142,14 +142,14 @@ public unsafe class ComponentInstance
             throw new TimeoutException("Could not acquire lock to load component function");
         }
 
-#if NET
-        ObjectDisposedException.ThrowIf(_store.Disposed, nameof(Store));
-#else
-        if (_store.Disposed) throw new ObjectDisposedException(nameof(Store));
-#endif
-
         try
         {
+#if NET
+            ObjectDisposedException.ThrowIf(_store.Disposed, nameof(Store));
+#else
+            if (_store.Disposed) throw new ObjectDisposedException(nameof(Store));
+#endif
+
             if (!_component.TryGetExport(name, out var index))
             {
                 throw new WasmtimeException($"Function '{name}' not found in component");

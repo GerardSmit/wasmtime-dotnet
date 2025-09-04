@@ -1,0 +1,8 @@
+﻿<Project>
+    <PropertyGroup>
+        <ProjectPrefix>javascript</ProjectPrefix>
+        <DefineConstants>$(DefineConstants);SUITE_JAVASCRIPT</DefineConstants>
+    </PropertyGroup>
+
+    <Import Project="Common.props" />
+</Project>

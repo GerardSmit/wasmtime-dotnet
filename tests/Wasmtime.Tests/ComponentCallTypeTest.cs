@@ -1,5 +1,5 @@
 ﻿using Xunit;
-using static Wit.Tests.Common.Types;
+using static Wit.Tests.Component.Types;
 
 namespace Wasmtime.Tests;
 

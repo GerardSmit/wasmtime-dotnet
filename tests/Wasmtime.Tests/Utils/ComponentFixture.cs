@@ -23,7 +23,15 @@ public class ComponentFixture : IDisposable
         Imports = new TestImportsImpl();
         Linker.Define(Imports);
 
-        var bytes = File.ReadAllBytes("component.wasm");
+#if SUITE_CSHARP
+        const string file = "wasm/csharp.wasm";
+#elif  SUITE_JAVASCRIPT
+        const string file = "wasm/javascript.wasm";
+#else
+        // Invalid configuration
+#endif
+
+        var bytes = File.ReadAllBytes(file);
         Component = Component.Compile(Engine, bytes);
     }
 

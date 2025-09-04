@@ -1,0 +1,8 @@
+﻿<Project>
+    <PropertyGroup>
+        <ProjectPrefix>csharp</ProjectPrefix>
+        <DefineConstants>$(DefineConstants);SUITE_CSHARP</DefineConstants>
+    </PropertyGroup>
+
+    <Import Project="Common.props" />
+</Project>

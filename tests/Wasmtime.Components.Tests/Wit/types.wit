@@ -1,9 +1,0 @@
-interface types {
-    use tests:common/types@0.1.0.{point};
-
-    record entity {
-        id: s32,
-        name: string,
-        position: point
-    }
-}
