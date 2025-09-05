@@ -137,20 +137,10 @@ export function combineString(s1, s2) {
   return s1 + s2;
 }
 
-// Dummy implementations for memory
-export function getMemoryUsage() {
-  return 0.0;
+export function acceptString(s) {
+  // Do nothing
 }
 
-export function forceGc() {
-  
-}
-
-export function getMemoryTest() {
-  return {
-    gcHandles: 0,
-    openGcHandles: 0,
-    allocations: 0,
-    openAllocations: 0
-  };
+export function returnString(length) {
+  return 'a'.repeat(length);
 }

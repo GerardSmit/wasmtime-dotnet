@@ -671,7 +671,7 @@ public class ComponentSourceGenerator() : IncrementalGenerator("ComponentSourceG
         foreach (var field in record.Fields)
         {
             sb.Append("public ");
-            field.Type.WriteCSharpType(sb, resolver);
+            field.Type.HostWriter.WriteCSharpType(sb, resolver);
             sb.Append(' ').Append(GetName(field.Name)).AppendLine(";");
         }
 
@@ -692,9 +692,9 @@ public class ComponentSourceGenerator() : IncrementalGenerator("ComponentSourceG
             var field = record.Fields[index];
             var uniqueName = GetName(field.Name, uppercaseFirst: false);
 
-            field.Type.WriteParameterInitializer(sb, uniqueName, resolver, ignoreDispose: true, externallyOwned: true);
+            field.Type.HostWriter.WriteParameterInitializer(sb, uniqueName, resolver, ignoreDispose: true, externallyOwned: true);
             sb.Append("builder.Set(").Append(index).Append(", new global::Wasmtime.ByteVector(global::Wit.Constants.").Append(field.CSharpName).Append("), ");
-            field.Type.WriteComponentValue(sb, field.CSharpName, ignoreDispose: true, resolver, externallyOwned: true);
+            field.Type.HostWriter.WriteComponentValue(sb, field.CSharpName, ignoreDispose: true, resolver, externallyOwned: true);
             sb.AppendLine(");");
         }
 
@@ -709,9 +709,9 @@ public class ComponentSourceGenerator() : IncrementalGenerator("ComponentSourceG
             var field = record.Fields[index];
             var uniqueName = GetName(field.Name, uppercaseFirst: false);
 
-            field.Type.WriteParameterInitializer(sb, uniqueName, resolver, ignoreDispose: true, externallyOwned: false);
+            field.Type.HostWriter.WriteParameterInitializer(sb, uniqueName, resolver, ignoreDispose: true, externallyOwned: false);
             sb.Append("builder.Set(").Append(index).Append(", global::Wit.Constants.").Append(field.CSharpName).Append(", ");
-            field.Type.WriteComponentValue(sb, field.CSharpName, ignoreDispose: true, resolver, externallyOwned: false);
+            field.Type.HostWriter.WriteComponentValue(sb, field.CSharpName, ignoreDispose: true, resolver, externallyOwned: false);
             sb.AppendLine(");");
         }
 
@@ -744,9 +744,9 @@ public class ComponentSourceGenerator() : IncrementalGenerator("ComponentSourceG
             sb.Append("if (name.Equals(global::Wit.Constants.").Append(field.CSharpName).AppendLine("))");
             sb.AppendLine("{");
             sb.IncrementIndent();
-            field.Type.WriteValueGetterInitializer(sb, "value", uniqueName, resolver);
+            field.Type.HostWriter.WriteValueGetterInitializer(sb, "value", uniqueName, resolver);
             sb.Append("result.").Append(field.CSharpName).Append(" = ");
-            field.Type.WriteValueGetter(sb, "value", uniqueName, resolver);
+            field.Type.HostWriter.WriteValueGetter(sb, "value", uniqueName, resolver);
             sb.AppendLine(";");
             sb.AppendLine("continue;");
             sb.DecrementIndent();
@@ -786,7 +786,7 @@ public class ComponentSourceGenerator() : IncrementalGenerator("ComponentSourceG
                 if (i > 0) sb.Append(", ");
                 var param = funcType.Parameters[i];
 
-                param.Type.WriteParameter(sb, GetName(param.Name, false), resolver);
+                param.Type.HostWriter.WriteParameter(sb, GetName(param.Name, false), resolver);
             }
 
             sb.AppendLine(")");
@@ -800,12 +800,12 @@ public class ComponentSourceGenerator() : IncrementalGenerator("ComponentSourceG
                 for (var index = 0; index < funcType.Parameters.Length; index++)
                 {
                     var param = funcType.Parameters[index];
-                    param.Type.WriteParameterInitializer(sb, GetName(param.Name, false), resolver, ignoreDispose: false, externallyOwned: false);
+                    param.Type.HostWriter.WriteParameterInitializer(sb, GetName(param.Name, false), resolver, ignoreDispose: false, externallyOwned: false);
                 }
 
                 if (sb.Length > length) sb.AppendLine();
 
-                var parameterSize = funcType.Parameters.Sum(p => p.Type.GetParameterSize(resolver));
+                var parameterSize = funcType.Parameters.Sum(p => p.Type.HostWriter.GetParameterSize(resolver));
 
                 sb.Append("global::Wasmtime.ComponentValue* parameters = ")
                     .Append("stackalloc global::Wasmtime.ComponentValue[")
@@ -815,8 +815,8 @@ public class ComponentSourceGenerator() : IncrementalGenerator("ComponentSourceG
                 for (var i = 0; i < funcType.Parameters.Length;)
                 {
                     var param = funcType.Parameters[i];
-                    param.Type.WriteParameterSetter(sb, "parameters", GetName(param.Name, false), i, ignoreDispose: false, resolver: resolver, externallyOwned: false);
-                    i += param.Type.GetParameterSize(resolver);
+                    param.Type.HostWriter.WriteParameterSetter(sb, "parameters", GetName(param.Name, false), i, ignoreDispose: false, resolver: resolver, externallyOwned: false);
+                    i += param.Type.HostWriter.GetParameterSize(resolver);
                 }
 
                 sb.AppendLine();
@@ -838,14 +838,14 @@ public class ComponentSourceGenerator() : IncrementalGenerator("ComponentSourceG
             {
                 for (var i = 0; i < funcType.Results.Length; i++)
                 {
-                    funcType.Results[i].WriteResultGetterInitializer(sb, "result", i, resolver);
+                    funcType.Results[i].HostWriter.WriteResultGetterInitializer(sb, "result", i, resolver);
                 }
             }
 
             if (funcType.Results.Length == 1)
             {
                 sb.Append("return ");
-                funcType.Results[0].WriteResultGetter(sb, "result", 0, resolver);
+                funcType.Results[0].HostWriter.WriteResultGetter(sb, "result", 0, resolver);
                 sb.AppendLine(";");
             }
             else if (funcType.Results.Length > 1)
@@ -856,7 +856,7 @@ public class ComponentSourceGenerator() : IncrementalGenerator("ComponentSourceG
                 for (var i = 0; i < funcType.Results.Length; i++)
                 {
                     if (i > 0) sb.AppendLine(",");
-                    funcType.Results[i].WriteResultGetter(sb, "result", i, resolver);
+                    funcType.Results[i].HostWriter.WriteResultGetter(sb, "result", i, resolver);
                 }
 
                 sb.AppendLine();
@@ -898,7 +898,7 @@ public class ComponentSourceGenerator() : IncrementalGenerator("ComponentSourceG
                 if (i > 0) sb.Append(", ");
                 var param = funcType.Parameters[i];
 
-                param.Type.WriteParameter(sb, GetName(param.Name, false), resolver);
+                param.Type.HostWriter.WriteParameter(sb, GetName(param.Name, false), resolver);
             }
 
             sb.AppendLine(");");
@@ -938,7 +938,7 @@ public class ComponentSourceGenerator() : IncrementalGenerator("ComponentSourceG
                 {
                     var param = funcType.Parameters[i];
 
-                    param.Type.WriteResultGetterInitializer(sb, "args", i, resolver);
+                    param.Type.HostWriter.WriteResultGetterInitializer(sb, "args", i, resolver);
                 }
             }
 
@@ -961,7 +961,7 @@ public class ComponentSourceGenerator() : IncrementalGenerator("ComponentSourceG
 
                     var param = funcType.Parameters[i];
 
-                    param.Type.WriteResultGetter(sb, "args", i, resolver);
+                    param.Type.HostWriter.WriteResultGetter(sb, "args", i, resolver);
                 }
 
                 sb.DecrementIndent();
@@ -981,15 +981,15 @@ public class ComponentSourceGenerator() : IncrementalGenerator("ComponentSourceG
                 {
                     var param = funcType.Results[i];
                     var variable = GetName(funcType, i);
-                    param.WriteParameterInitializer(sb, variable, resolver, ignoreDispose: true, externallyOwned: true);
+                    param.HostWriter.WriteParameterInitializer(sb, variable, resolver, ignoreDispose: true, externallyOwned: true);
                 }
 
                 for (var i = 0; i < funcType.Results.Length; i++)
                 {
                     var variable = GetName(funcType, i);
                     var param = funcType.Results[i];
-                    param.WriteParameterSetter(sb, "results", variable, i, ignoreDispose: true, resolver, externallyOwned: true);
-                    i += param.GetParameterSize(resolver);
+                    param.HostWriter.WriteParameterSetter(sb, "results", variable, i, ignoreDispose: true, resolver, externallyOwned: true);
+                    i += param.HostWriter.GetParameterSize(resolver);
                 }
             }
 
@@ -1038,7 +1038,7 @@ public class ComponentSourceGenerator() : IncrementalGenerator("ComponentSourceG
         }
         else if (items.Length == 1)
         {
-            items[0].WriteCSharpType(sb, resolver);
+            items[0].HostWriter.WriteCSharpType(sb, resolver);
         }
         else
         {
@@ -1046,7 +1046,7 @@ public class ComponentSourceGenerator() : IncrementalGenerator("ComponentSourceG
             for (var i = 0; i < items.Length; i++)
             {
                 if (i > 0) sb.Append(", ");
-                items[i].WriteCSharpType(sb, resolver);
+                items[i].HostWriter.WriteCSharpType(sb, resolver);
             }
 
             sb.Append(')');

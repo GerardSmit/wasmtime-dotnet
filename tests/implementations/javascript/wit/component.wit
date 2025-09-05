@@ -52,13 +52,6 @@ world test {
 
     include type-tests;
 
-    record memory-test {
-        gc-handles: u32,
-        open-gc-handles: u32,
-        allocations: u32,
-        open-allocations: u32,
-    }
-
     export register-entity: func(e: entity);
     export register-entities: func(e: list<entity>);
     export get-entity: func(id: s32) -> entity;
@@ -74,10 +67,8 @@ world test {
     export host-combine-string: func(s1: string, s2: string) -> string;
     export combine-string: func(s1: string, s2: string) -> string;
 
-    export get-memory-usage: func() -> f64;
-    export force-gc: func();
-
-    export get-memory-test: func() -> memory-test;
+    export accept-string: func(s: string);
+    export return-string: func(length: u32) -> string;
 
     import callback: func();
     import callback-combine-string: func(s1: string, s2: string) -> string;

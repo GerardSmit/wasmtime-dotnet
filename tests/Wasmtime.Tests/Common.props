@@ -31,7 +31,7 @@
     </ItemGroup>
 
     <ItemGroup>
-        <AdditionalFiles Include="..\wit\**\*.wit" Link="wit\%(RecursiveDir)%(Filename)%(Extension)" Exclude="**/bin/**;**/obj/**" />
+        <AdditionalFiles Include="..\implementations\wit\**\*.wit" Link="wit\%(RecursiveDir)%(Filename)%(Extension)" Exclude="**/bin/**;**/obj/**" />
     </ItemGroup>
 
     <ItemGroup>

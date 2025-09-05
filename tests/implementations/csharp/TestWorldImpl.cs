@@ -1,4 +1,6 @@
-﻿using System.Runtime.InteropServices;
+﻿using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
+using System.Text;
 using TestWorld.wit.imports.tests.component.v0_1_0;
 using static TestWorld.wit.imports.tests.component.v0_1_0.ITypes;
 
@@ -13,25 +15,14 @@ public sealed class TestWorldImpl : ITestWorld
         return s1 + s2;
     }
 
-    public static double GetMemoryUsage()
+    public static void AcceptString(string s)
     {
-        return GC.GetTotalMemory(true) / 1024.0 / 1024.0;
+        // No-op
     }
 
-    public static void ForceGc()
+    public static string ReturnString(uint length)
     {
-        GC.Collect();
-        GC.WaitForPendingFinalizers();
-        GC.Collect();
-    }
-
-    public static ITestWorld.MemoryTest GetMemoryTest()
-    {
-       return new ITestWorld.MemoryTest(
-           exports.GCHandle.GcHandles,
-           exports.GCHandle.OpenGcHandles,
-           exports.NativeMemory.Allocations,
-           exports.NativeMemory.OpenAllocations);
+        return new string('a', (int)length);
     }
 
     public static byte AddU8(byte x, byte y) => (byte)(x + y);
@@ -145,6 +136,12 @@ public sealed class TestWorldImpl : ITestWorld
     public static string HostCombineString(string s1, string s2)
     {
         return exports.TestWorld.CallbackCombineString(s1, s2);
+    }
+
+    [MethodImpl(MethodImplOptions.NoInlining)]
+    private static unsafe void Inner(nint p, int p1)
+    {
+        AcceptString(Encoding.UTF8.GetString((byte*)p, p1));
     }
 }
 

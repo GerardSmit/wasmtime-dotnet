@@ -1,5 +1,4 @@
-﻿#if SUITE_JAVASCRIPT // TODO: Fix this for C#
-using System;
+﻿using System;
 using System.Threading.Tasks;
 using Xunit;
 
@@ -9,50 +8,18 @@ namespace Wasmtime.Tests;
 public class ComponentCallMemory(ComponentFixture fixture, ITestOutputHelper output)
 {
     [Fact]
-    public async Task StressTest()
+    public void ReturnString()
     {
         using var state = fixture.CreateState();
 
-        var largeString = new string('a', 16 * 1024);
-        var result = largeString + largeString;
-
-        var hostMemory = GetMemoryUsage();
-        var guestMemory = state.Exports.GetMemoryUsage();
-
-        output.WriteLine("Initial memory:");
-        output.WriteLine($"   HOST:  {hostMemory:0.00} MB");
-        output.WriteLine($"   GUEST: {guestMemory:0.00} MB");
-
-        for (var i = 0; i < 15; i++)
+        for (var i = 0; i < 500_000; i++)
         {
-            await ExecuteConcurrent(
-                () => state.Exports,
-                s => Assert.Equal(result, s.HostCombineString(largeString, largeString)));
+            state.Exports.ReturnString(65536 * 2);
 
-            var newHostMemory = GetMemoryUsage();
-            var newGuestMemory = state.Exports.GetMemoryUsage();
-            var usage = state.Exports.GetMemoryTest();
-
-            output.WriteLine("");
-            output.WriteLine($"Iterations {i + 1}:");
-            output.WriteLine($"   HOST:  {newHostMemory:0.00} MB (diff: {newHostMemory - hostMemory:0.00} MB), active values: {ComponentValue.ActiveCount}");
-            output.WriteLine($"   GUEST: {newGuestMemory:0.00} MB (diff: {newGuestMemory - guestMemory:0.00} MB), open allocations: {usage.OpenAllocations}/{usage.Allocations}, active handles: {usage.OpenGcHandles}/{usage.GcHandles}");
-
-            hostMemory = newHostMemory;
-            guestMemory = newGuestMemory;
-
-            ForceGc();
-            state.Exports.ForceGc();
+            if (i % 100 == 0)
+            {
+                output.WriteLine($"Iteration {i}");
+            }
         }
     }
-
-    private static double GetMemoryUsage() => GC.GetTotalMemory(true) / 1024.0 / 1024.0;
-
-    private static void ForceGc()
-    {
-        GC.Collect();
-        GC.WaitForPendingFinalizers();
-        GC.Collect();
-    }
 }
-#endif

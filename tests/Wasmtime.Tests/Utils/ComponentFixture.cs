@@ -27,6 +27,8 @@ public class ComponentFixture : IDisposable
         const string file = "wasm/csharp.wasm";
 #elif  SUITE_JAVASCRIPT
         const string file = "wasm/javascript.wasm";
+#elif SUITE_C
+        const string file = "wasm/c.wasm";
 #else
         // Invalid configuration
 #endif

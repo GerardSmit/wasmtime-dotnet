@@ -1,0 +1,8 @@
+﻿<Project>
+    <PropertyGroup>
+        <ProjectPrefix>c</ProjectPrefix>
+        <DefineConstants>$(DefineConstants);SUITE_C</DefineConstants>
+    </PropertyGroup>
+
+    <Import Project="Common.props" />
+</Project>
