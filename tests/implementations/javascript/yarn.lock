@@ -2,7 +2,7 @@
 # yarn lockfile v1
 
 
-"@bytecodealliance/componentize-js@^0.18.4":
+"@bytecodealliance/componentize-js@^0.18.4", "@bytecodealliance/componentize-js@^0.18.5":
   version "0.18.5"
   resolved "https://registry.yarnpkg.com/@bytecodealliance/componentize-js/-/componentize-js-0.18.5.tgz#b4ebfe3766f374f41feb5200a76c54cc2cc8a3f1"
   integrity sha512-5iFhwpij4uauxmcCbMSdfx+QCB0swLl9g5Z3LlV95PgeVwRfp8gtNmps2oZ8/sSK1hXNYpGmMEq+XOKSRfS+Iw==
@@ -13,7 +13,7 @@
     es-module-lexer "^1.6.0"
     oxc-parser "^0.76.0"
 
-"@bytecodealliance/jco@^1.13.0", "@bytecodealliance/jco@^1.9.1":
+"@bytecodealliance/jco@^1.14.0", "@bytecodealliance/jco@^1.9.1":
   version "1.14.0"
   resolved "https://registry.yarnpkg.com/@bytecodealliance/jco/-/jco-1.14.0.tgz#fccf87e86aa44fdda24b0cc557f8c2b66bbeadd3"
   integrity sha512-AahjCVeaaLGHIip88UUhMIb9YhGf3v8khSK3h9yajUYnzxhV1/AbKcHHfUcmNlhiOu5JQ4i0STzkhyqThuqlsg==

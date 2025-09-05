@@ -367,7 +367,7 @@ public class Wit
             return new WitEnum(
                 packageName.Value,
                 enumContext.identifier().GetTextWithoutEscape(),
-                enumContext.enumItem().Select(x => x.identifier().GetTextWithoutEscape()).ToArray()
+                enumContext.enumItem().Select(x => new WitEnumValue(x.identifier().GetTextWithoutEscape())).ToArray()
             );
         }
 
@@ -376,7 +376,7 @@ public class Wit
             return new WitFlags(
                 packageName.Value,
                 flagsContext.identifier().GetTextWithoutEscape(),
-                flagsContext.flagsItem().Select(x => x.identifier().GetTextWithoutEscape()).ToArray()
+                flagsContext.flagsItem().Select(x => new WitEnumValue(x.identifier().GetTextWithoutEscape())).ToArray()
             );
         }
 

@@ -7,6 +7,8 @@ public record WitWorld(
     WitTypeDefinitions Definitions
 ) : ITypeContainer
 {
+    public string CSharpName { get; } = StringUtils.GetName(Name);
+
     public bool TryGetType(string name, [NotNullWhen(true)] out WitType? type)
     {
         return Definitions.TryGetType(name, out type);

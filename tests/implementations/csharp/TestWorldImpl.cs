@@ -66,9 +66,9 @@ public sealed class TestWorldImpl : ITestWorld
         return input.ToUpperInvariant();
     }
 
-    public static uint[] MultiplyList(uint[] list, uint factor)
+    public static int[] MultiplyList(int[] list, int factor)
     {
-        var results = new uint[list.Length];
+        var results = new int[list.Length];
         for (var i = 0; i < list.Length; i++)
         {
             results[i] = list[i] * factor;

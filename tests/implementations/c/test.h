@@ -61,6 +61,11 @@ typedef struct {
 } test_list_list_u32_t;
 
 typedef struct {
+  int32_t *ptr;
+  size_t len;
+} test_list_s32_t;
+
+typedef struct {
   test_status_t *ptr;
   size_t len;
 } test_list_status_t;
@@ -101,7 +106,7 @@ float exports_test_add_f32(float x, float y);
 double exports_test_add_f64(double x, double y);
 void exports_test_add_point(test_point_t *p1, test_point_t *p2, test_point_t *ret);
 void exports_test_uppercase(test_string_t *s, test_string_t *ret);
-void exports_test_multiply_list(test_list_u32_t *list, uint32_t factor, test_list_u32_t *ret);
+void exports_test_multiply_list(test_list_s32_t *list, int32_t factor, test_list_s32_t *ret);
 test_status_t exports_test_return_status(test_status_t status);
 void exports_test_return_status_list(test_list_status_t *statuses, test_list_status_t *ret);
 test_permission_t exports_test_return_permission(test_permission_t permission);
@@ -118,6 +123,8 @@ void test_list_entity_free(test_list_entity_t *ptr);
 void test_list_u32_free(test_list_u32_t *ptr);
 
 void test_list_list_u32_free(test_list_list_u32_t *ptr);
+
+void test_list_s32_free(test_list_s32_t *ptr);
 
 void test_list_status_free(test_list_status_t *ptr);
 

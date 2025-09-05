@@ -9,5 +9,5 @@ public record WitTupleType(
     EquatableArray<WitType> ElementTypes
 ) : WitType(WitTypeKind.Tuple)
 {
-    public override HostWriter HostWriter => new TupleHostWriter(ElementTypes);
+    public override TypeHostWriter HostWriter => new TupleHostWriter(ElementTypes);
 }

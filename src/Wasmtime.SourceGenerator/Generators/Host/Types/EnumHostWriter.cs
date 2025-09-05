@@ -2,18 +2,18 @@
 
 namespace Wasmtime.SourceGenerator.Generators.Host;
 
-public class HostEnumWriter(
+public class EnumHostWriter(
     WitPackageNameVersion package,
     string name
-) : HostEnumWriterBase(WitTypeKind.Enum, package, name)
+) : EnumHostWriterBase(WitTypeKind.Enum, package, name)
 {
     protected override string TypeName => "Enum";
 }
 
-public class HostFlagsWriter(
+public class FlagsHostWriter(
     WitPackageNameVersion package,
     string name
-) : HostEnumWriterBase(WitTypeKind.Enum, package, name)
+) : EnumHostWriterBase(WitTypeKind.Enum, package, name)
 {
     protected override string TypeName => "Flags";
 
@@ -40,11 +40,11 @@ public class HostFlagsWriter(
     }
 }
 
-public abstract class HostEnumWriterBase(
+public abstract class EnumHostWriterBase(
     WitTypeKind kind,
     WitPackageNameVersion package,
     string name
-) : HostWriter(kind)
+) : TypeHostWriter(kind)
 {
     protected abstract string TypeName { get; }
 
@@ -54,7 +54,7 @@ public abstract class HostEnumWriterBase(
         sb.Append("global::");
         package.PackageName.WritePath(sb);
         sb.Append('.');
-        sb.Append(ComponentSourceGenerator.GetName(name));
+        sb.Append(name);
     }
 
     /// <inheritdoc />

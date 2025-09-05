@@ -9,5 +9,5 @@ public record WitListType(
     WitType ElementType
 ) : WitType(WitTypeKind.List)
 {
-    public override HostWriter HostWriter => new HostListWriter(ElementType);
+    public override TypeHostWriter HostWriter => new ListHostWriter(ElementType);
 }

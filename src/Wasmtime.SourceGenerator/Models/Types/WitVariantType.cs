@@ -8,5 +8,7 @@ public record WitVariantType(
     EquatableArray<WitVariantCase> Values
 ) : WitType(WitTypeKind.Variant)
 {
-    public override HostWriter HostWriter => new VariantHostWriter(Package, Name);
+    public string CSharpName { get; } = StringUtils.GetName(Name);
+
+    public override TypeHostWriter HostWriter => new VariantHostWriter(Package, CSharpName);
 }

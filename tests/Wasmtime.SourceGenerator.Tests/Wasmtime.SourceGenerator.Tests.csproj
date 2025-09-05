@@ -23,7 +23,7 @@
     </ItemGroup>
 
     <ItemGroup>
-        <None Include="..\wit\*.wit" Link="wit\%(RecursiveDir)%(Filename)%(Extension)" Exclude="**/bin/**;**/obj/**">
+        <None Include="..\implementations\wit\*.wit" Link="wit\%(RecursiveDir)%(Filename)%(Extension)" Exclude="**/bin/**;**/obj/**">
             <CopyToOutputDirectory>Always</CopyToOutputDirectory>
         </None>
         <None Include="wasip2\**\*.wit" Link="wasip2\%(RecursiveDir)%(Filename)%(Extension)" Exclude="**/bin/**;**/obj/**">

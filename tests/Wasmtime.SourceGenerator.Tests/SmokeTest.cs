@@ -1,5 +1,6 @@
 ﻿using System.IO;
 using System.Linq;
+using Wasmtime.SourceGenerator.Generators.Host;
 using Wasmtime.SourceGenerator.Models;
 
 namespace Wasmtime.SourceGenerator.Tests;
@@ -9,7 +10,7 @@ public class SmokeTest(ITestOutputHelper output)
     [Theory]
     [InlineData("wasip2")]
     [InlineData("wit")]
-    public void Parse(string directoryName)
+    public void GenerateHost(string directoryName)
     {
         var directory = Path.GetFullPath(directoryName);
         Assert.True(Directory.Exists(directory));
@@ -36,7 +37,7 @@ public class SmokeTest(ITestOutputHelper output)
 
         foreach (var kv in projectResolver.Packages)
         {
-            var (_, content) = ComponentSourceGenerator.GenerateWitAccessor(kv, projectResolver);
+            var (_, content) = HostWriter.GenerateWitAccessor(kv, projectResolver);
             Assert.NotEmpty(content);
 
             output.WriteLine($"--- {kv.Key} ---");

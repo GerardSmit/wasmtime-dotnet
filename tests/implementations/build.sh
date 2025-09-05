@@ -6,6 +6,11 @@
 
 implementation=$1
 
+popd() {
+    # Disable output of popd command
+    command popd "$@" > /dev/null
+}
+
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 pushd "$SCRIPT_DIR"
 
@@ -30,6 +35,8 @@ else
     # Default to x64 if architecture is not recognized
     ARCH="x64"
 fi
+
+mkdir ../Wasmtime.Tests/wasm -p
 
 if [[ -z "$implementation" || "$implementation" == "csharp" ]]; then
     rm -rf csharp/wit

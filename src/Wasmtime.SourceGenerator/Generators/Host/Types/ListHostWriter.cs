@@ -2,7 +2,7 @@
 
 namespace Wasmtime.SourceGenerator.Generators.Host;
 
-public class HostListWriter(WitType ElementType) : HostWriter(WitTypeKind.List)
+public class ListHostWriter(WitType ElementType) : TypeHostWriter(WitTypeKind.List)
 {
     public override bool MustBeDisposed => true;
 

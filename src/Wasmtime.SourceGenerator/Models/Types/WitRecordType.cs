@@ -7,7 +7,9 @@ namespace Wasmtime.SourceGenerator.Models;
 /// </summary>
 public record WitRecordType(WitPackageNameVersion Package, string Name, EquatableArray<WitField> Fields) : WitType(WitTypeKind.Record)
 {
-    public override HostWriter HostWriter => new RecordHostWriter(Package, Name);
+    public string CSharpName { get; } = StringUtils.GetName(Name);
+
+    public override TypeHostWriter HostWriter => new RecordHostWriter(Package, CSharpName);
 }
 
 /// <summary>
@@ -18,5 +20,7 @@ public readonly record struct WitField(
     WitType Type
 )
 {
-    public string CSharpName { get; } = ComponentSourceGenerator.GetName(Name);
+    public string CSharpName { get; } = StringUtils.GetName(Name);
+
+    public string CSharpVariableName { get; } = StringUtils.GetName(Name, uppercaseFirst: false);
 }

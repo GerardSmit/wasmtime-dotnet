@@ -9,5 +9,5 @@ public record WitBorrowType(
     WitType ElementType
 ) : WitType(WitTypeKind.Borrow)
 {
-    public override HostWriter HostWriter => new BorrowHostWriter(ElementType);
+    public override TypeHostWriter HostWriter => new BorrowHostWriter(ElementType);
 }

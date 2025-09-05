@@ -2,13 +2,16 @@
 
 namespace Wasmtime.SourceGenerator.Generators.Host;
 
-public class OptionHostWriter(WitType elementType) : HostWriter(WitTypeKind.Option)
+public class VariantHostWriter(WitPackageNameVersion package, string name) : TypeHostWriter(WitTypeKind.Variant)
 {
     /// <inheritdoc />
     public override void WriteCSharpType(IndentedStringBuilder sb, ITypeContainerResolver resolver)
     {
-        sb.Append("global::Wasmtime.Option<");
-        elementType.HostWriter.WriteCSharpType(sb, resolver);
+        sb.Append("global::Wasmtime.Variant<");
+        sb.Append("global::");
+        package.PackageName.WritePath(sb);
+        sb.Append('.');
+        sb.Append(name);
         sb.Append('>');
     }
 
@@ -16,8 +19,8 @@ public class OptionHostWriter(WitType elementType) : HostWriter(WitTypeKind.Opti
     public override void WriteValueGetter(IndentedStringBuilder sb, string paramName, string uniqueName,
         ITypeContainerResolver resolver)
     {
-        sb.Append(paramName).Append(".ToOption<");
-        elementType.HostWriter.WriteCSharpType(sb, resolver);
+        sb.Append(paramName).Append(".ToVariant<");
+        WriteCSharpType(sb, resolver);
         sb.Append(">()");
     }
 
@@ -25,7 +28,7 @@ public class OptionHostWriter(WitType elementType) : HostWriter(WitTypeKind.Opti
     protected override void WriteCreateComponentValue(IndentedStringBuilder sb, string paramKey,
         ITypeContainerResolver resolver, bool externallyOwned)
     {
-        sb.Append("global::Wasmtime.ComponentValue.CreateOption<");
+        sb.Append("global::Wasmtime.ComponentValue.CreateVariant<");
         WriteCSharpType(sb, resolver);
         sb.Append(">(").Append(paramKey).Append(")");
     }

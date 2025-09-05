@@ -186,6 +186,16 @@ void test_list_list_u32_free(test_list_list_u32_t *ptr) {
   }
 }
 
+void test_list_s32_free(test_list_s32_t *ptr) {
+  size_t list_len = ptr->len;
+  if (list_len > 0) {
+    int32_t *list_ptr = ptr->ptr;
+    for (size_t i = 0; i < list_len; i++) {
+    }
+    free(list_ptr);
+  }
+}
+
 void test_list_status_free(test_list_status_t *ptr) {
   size_t list_len = ptr->len;
   if (list_len > 0) {
@@ -463,9 +473,9 @@ uint8_t * __wasm_export_exports_test_uppercase(uint8_t * arg, size_t arg0) {
 
 __attribute__((__export_name__("multiply-list")))
 uint8_t * __wasm_export_exports_test_multiply_list(uint8_t * arg, size_t arg0, int32_t arg1) {
-  test_list_u32_t arg2 = (test_list_u32_t) { (uint32_t*)(arg), (arg0) };
-  test_list_u32_t ret;
-  exports_test_multiply_list(&arg2, (uint32_t) (arg1), &ret);
+  test_list_s32_t arg2 = (test_list_s32_t) { (int32_t*)(arg), (arg0) };
+  test_list_s32_t ret;
+  exports_test_multiply_list(&arg2, arg1, &ret);
   uint8_t *ptr = (uint8_t *) &RET_AREA;
   *((size_t*)(ptr + sizeof(void*))) = (ret).len;
   *((uint8_t **)(ptr + 0)) = (uint8_t *) (ret).ptr;

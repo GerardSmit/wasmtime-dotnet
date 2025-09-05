@@ -60,7 +60,7 @@ export function multiplyList(list, factor) {
      results.push(item * factor);
   }
 
-  return results;
+  return new Int32Array(results);
 }
 
 export function returnStatus(status) {

@@ -4,7 +4,7 @@ namespace Wasmtime.SourceGenerator.Generators.Host;
 
 public class BorrowHostWriter(
     WitType elementType
-) : HostWriter(WitTypeKind.Borrow)
+) : TypeHostWriter(WitTypeKind.Borrow)
 {
     /// <inheritdoc />
     public override void WriteCSharpType(IndentedStringBuilder sb, ITypeContainerResolver resolver)

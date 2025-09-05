@@ -64,7 +64,7 @@ public record WitCustomType(WitPackageNameVersion Package, string Name) : WitTyp
         return type;
     }
 
-    public override HostWriter HostWriter => new CustomHostWriter(this);
+    public override TypeHostWriter HostWriter => new CustomHostWriter(this);
 
     public void Deconstruct(out WitPackageNameVersion Package, out string Name)
     {

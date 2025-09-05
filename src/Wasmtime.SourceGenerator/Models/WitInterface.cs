@@ -8,6 +8,8 @@ public record WitInterface(
     EquatableArray<WitField> Fields
 ) : WitTypeDef, ITypeContainer
 {
+    public string CSharpName { get; } = StringUtils.GetName(Name);
+
     public WitType Type { get; } = new WitInterfaceType(Name, Fields);
 
     public bool TryGetType(string name, [NotNullWhen(true)] out WitType? type)

@@ -40,7 +40,7 @@ world type-tests {
     export add-f64: func(x: f64, y: f64) -> f64;
     export add-point: func(p1: point, p2: point) -> point;
     export uppercase: func(s: string) -> string;
-    export multiply-list: func(%list: list<u32>, factor: u32) -> list<u32>;
+    export multiply-list: func(%list: list<s32>, factor: s32) -> list<s32>;
     export return-status: func(status: status) -> status;
     export return-status-list: func(statuses: list<status>) -> list<status>;
     export return-permission: func(permission: permission) -> permission;

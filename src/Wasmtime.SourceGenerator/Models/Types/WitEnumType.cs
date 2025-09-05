@@ -7,7 +7,9 @@ public record WitEnumType(
     string Name
 ) : WitType(WitTypeKind.Enum)
 {
-    public override HostWriter HostWriter => new HostEnumWriter(Package, Name);
+    public string CSharpName { get; } = StringUtils.GetName(Name);
+
+    public override TypeHostWriter HostWriter => new EnumHostWriter(Package, CSharpName);
 }
 
 public record WitFlagsType(
@@ -15,5 +17,7 @@ public record WitFlagsType(
     string Name
 ) : WitType(WitTypeKind.Flags)
 {
-    public override HostWriter HostWriter => new HostFlagsWriter(Package, Name);
+    public string CSharpName { get; } = StringUtils.GetName(Name);
+
+    public override TypeHostWriter HostWriter => new FlagsHostWriter(Package, CSharpName);
 }

@@ -12,6 +12,11 @@ public record WitFuncType(
 /// Represents a function parameter in WIT.
 /// </summary>
 public record WitFuncParameter(
-   string Name,
-   WitType Type
-);
+    string Name,
+    WitType Type
+)
+{
+    public string CSharpName { get; } = StringUtils.GetName(Name);
+
+    public string CSharpVariableName { get; } = StringUtils.GetName(Name, uppercaseFirst: false);
+}

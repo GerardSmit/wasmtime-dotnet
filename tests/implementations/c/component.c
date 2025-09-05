@@ -116,9 +116,9 @@ void exports_test_return_string(uint32_t length, test_string_t *ret) {
 }
 
 // List functions
-void exports_test_multiply_list(test_list_u32_t *list, uint32_t factor, test_list_u32_t *ret) {
+void exports_test_multiply_list(test_list_s32_t *list, int32_t factor, test_list_s32_t *ret) {
     ret->len = list->len;
-    ret->ptr = malloc(list->len * sizeof(uint32_t));
+    ret->ptr = malloc(list->len * sizeof(int32_t));
     
     for (size_t i = 0; i < list->len; i++) {
         ret->ptr[i] = list->ptr[i] * factor;

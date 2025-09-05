@@ -9,5 +9,5 @@ public record WitOptionType(
     WitType ElementType
 ) : WitType(WitTypeKind.Option)
 {
-    public override HostWriter HostWriter => new OptionHostWriter(ElementType);
+    public override TypeHostWriter HostWriter => new OptionHostWriter(ElementType);
 }

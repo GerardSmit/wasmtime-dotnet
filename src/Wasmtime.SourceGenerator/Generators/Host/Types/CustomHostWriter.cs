@@ -2,9 +2,9 @@
 
 namespace Wasmtime.SourceGenerator.Generators.Host;
 
-public class CustomHostWriter(WitCustomType type) : HostWriter(WitTypeKind.User)
+public class CustomHostWriter(WitCustomType type) : TypeHostWriter(WitTypeKind.User)
 {
-    private HostWriter Resolve(ITypeContainerResolver resolver)
+    private TypeHostWriter Resolve(ITypeContainerResolver resolver)
     {
         return type.Resolve(resolver).HostWriter;
     }

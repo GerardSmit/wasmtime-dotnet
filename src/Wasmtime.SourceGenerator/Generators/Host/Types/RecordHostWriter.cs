@@ -2,7 +2,7 @@
 
 namespace Wasmtime.SourceGenerator.Generators.Host;
 
-public class RecordHostWriter(WitPackageNameVersion package, string name) : HostWriter(WitTypeKind.Record)
+public class RecordHostWriter(WitPackageNameVersion package, string name) : TypeHostWriter(WitTypeKind.Record)
 {
     public override bool MustBeDisposed => true;
 
@@ -12,7 +12,7 @@ public class RecordHostWriter(WitPackageNameVersion package, string name) : Host
         sb.Append("global::");
         package.PackageName.WritePath(sb);
         sb.Append('.');
-        sb.Append(ComponentSourceGenerator.GetName(name));
+        sb.Append(name);
     }
 
     protected override void WriteCreateComponentValue(IndentedStringBuilder sb, string paramKey,

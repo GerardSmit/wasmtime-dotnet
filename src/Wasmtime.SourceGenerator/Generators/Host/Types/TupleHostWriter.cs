@@ -2,7 +2,7 @@
 
 namespace Wasmtime.SourceGenerator.Generators.Host;
 
-public class TupleHostWriter(EquatableArray<WitType> elementTypes) : HostWriter(WitTypeKind.Tuple)
+public class TupleHostWriter(EquatableArray<WitType> elementTypes) : TypeHostWriter(WitTypeKind.Tuple)
 {
     /// <inheritdoc />
     public override void WriteCSharpType(IndentedStringBuilder sb, ITypeContainerResolver resolver)
