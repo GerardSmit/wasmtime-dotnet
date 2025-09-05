@@ -114,6 +114,12 @@ platform.
 
 ### Testing
 
+Build the test WASM modules:
+
+```
+sh tests/implementations/build.sh
+```
+
 Use `dotnet` to run the unit tests:
 
 ```
